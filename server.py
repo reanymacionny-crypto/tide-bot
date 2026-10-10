@@ -41,12 +41,20 @@ def get_user_id(request: web.Request) -> int | None:
 
 # ── STATIC WEBAPP ─────────────────────────────────────────────
 async def handle_static(request):
-    path = request.match_info.get('path', 'index.html')
+    path = request.match_info.get('path', '')
+    if not path or path == '/':
+        path = 'index.html'
+    # Убираем начальный слеш
+    path = path.lstrip('/')
     if not path:
         path = 'index.html'
     file_path = os.path.join(WEBAPP_DIR, path)
+    # Защита от directory traversal
+    if not os.path.abspath(file_path).startswith(os.path.abspath(WEBAPP_DIR)):
+        raise web.HTTPForbidden()
     if not os.path.exists(file_path):
-        raise web.HTTPNotFound()
+        # Всегда отдаём index.html для SPA
+        file_path = os.path.join(WEBAPP_DIR, 'index.html')
     return web.FileResponse(file_path)
 
 # ── API: /api/me ──────────────────────────────────────────────
