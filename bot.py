@@ -3,10 +3,14 @@ import logging
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import (
     Message, CallbackQuery,
-    LabeledPrice, PreCheckoutQuery, SuccessfulPayment
+    LabeledPrice, PreCheckoutQuery, SuccessfulPayment,
+    InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 )
 from aiogram.filters import Command, CommandStart
 from aiogram.utils.markdown import hbold
+import os
+
+WEBAPP_URL = os.getenv('WEBAPP_URL', '')
 
 from config import BOT_TOKEN, ADMIN_ID, STARS_TO_TCOINS, COIN_NAME, COIN_EMOJI
 from database import (
@@ -54,15 +58,22 @@ def nft_card(nft: dict) -> str:
 @dp.message(CommandStart())
 async def cmd_start(msg: Message):
     user = await get_or_create_user(msg.from_user.id, msg.from_user.username or "")
+    # Кнопка открытия Mini App
+    kb = None
+    if WEBAPP_URL:
+        kb = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(
+                text="🌊 Открыть TIDE BOT",
+                web_app=WebAppInfo(url=WEBAPP_URL)
+            )
+        ]])
+    else:
+        kb = main_menu_kb()
     await msg.answer(
         f"👋 Добро пожаловать в <b>TIDE BOT</b>!\n\n"
         f"🪙 Твой баланс: <b>{user['tcoins']} {COIN_NAME}</b>\n\n"
-        f"Здесь ты можешь:\n"
-        f"🛍 Покупать NFT за {COIN_NAME}\n"
-        f"⬆️ Апгрейдить NFT до более редких\n"
-        f"💸 Выводить NFT за Telegram Stars ⭐\n"
-        f"💰 Пополнять баланс через Stars",
-        reply_markup=main_menu_kb(),
+        f"Нажми кнопку ниже чтобы открыть приложение 👇",
+        reply_markup=kb,
         parse_mode="HTML"
     )
 
