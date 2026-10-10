@@ -2,7 +2,7 @@
 Веб-сервер: раздаёт webapp/ и обрабатывает API запросы от Mini App
 """
 from aiohttp import web
-import json, os, hashlib, hmac
+import json, os, hashlib, hmac, mimetypes
 from config import BOT_TOKEN, STARS_TO_TCOINS
 from database import (
     get_or_create_user, get_user,
@@ -16,7 +16,6 @@ import random
 
 WEBAPP_DIR = os.path.join(os.path.dirname(__file__), 'webapp')
 
-# ── VERIFY TELEGRAM INIT DATA ─────────────────────────────────
 def verify_init_data(init_data: str) -> dict | None:
     try:
         from urllib.parse import unquote, parse_qsl
@@ -39,19 +38,24 @@ def get_user_id(request: web.Request) -> int | None:
     user = verify_init_data(init_data)
     return user.get('id') if user else None
 
-# ── STATIC WEBAPP ─────────────────────────────────────────────
-async def handle_static(request):
-    rel = str(request.rel_url).lstrip('/')
-    if not rel or rel == '/':
-        rel = 'index.html'
-    # Убираем query string
-    rel = rel.split('?')[0]
-    file_path = os.path.join(WEBAPP_DIR, rel)
-    if not os.path.exists(file_path):
-        file_path = os.path.join(WEBAPP_DIR, 'index.html')
-    return web.FileResponse(file_path)
+# ── STATIC FILE HANDLER ───────────────────────────────────────
+async def handle_index(request):
+    path = os.path.join(WEBAPP_DIR, 'index.html')
+    return web.FileResponse(path)
 
-# ── API: /api/me ──────────────────────────────────────────────
+async def handle_file(request):
+    filename = request.match_info['filename']
+    # Безопасность
+    filename = os.path.basename(filename)
+    path = os.path.join(WEBAPP_DIR, filename)
+    if not os.path.exists(path):
+        return web.Response(status=404, text='Not Found')
+    mime = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+    with open(path, 'rb') as f:
+        content = f.read()
+    return web.Response(body=content, content_type=mime)
+
+# ── API ───────────────────────────────────────────────────────
 async def api_me(request):
     uid = get_user_id(request)
     if not uid:
@@ -63,7 +67,6 @@ async def api_me(request):
         'inventory': [{'inv_id': i['id'], 'nft_id': i['nft_id']} for i in inv]
     })
 
-# ── API: /api/buy ─────────────────────────────────────────────
 async def api_buy(request):
     uid = get_user_id(request)
     if not uid:
@@ -88,7 +91,6 @@ async def api_buy(request):
         'inventory': [{'inv_id': i['id'], 'nft_id': i['nft_id']} for i in inv]
     })
 
-# ── API: /api/sell ────────────────────────────────────────────
 async def api_sell(request):
     uid = get_user_id(request)
     if not uid:
@@ -99,7 +101,6 @@ async def api_sell(request):
     if not item:
         return web.json_response({'error': 'NFT не найден'})
     nft = get_nft(item['nft_id'])
-    # Проверяем звёзды бота
     bot_stars = await get_bot_stars()
     if bot_stars < nft['sell_price']:
         return web.json_response({'ok': False, 'no_stars': True})
@@ -116,7 +117,6 @@ async def api_sell(request):
         'inventory': [{'inv_id': i['id'], 'nft_id': i['nft_id']} for i in inv]
     })
 
-# ── API: /api/upgrade ─────────────────────────────────────────
 async def api_upgrade(request):
     uid = get_user_id(request)
     if not uid:
@@ -134,7 +134,6 @@ async def api_upgrade(request):
         return web.json_response({'error': 'Недостаточно T Coins'})
     await spend_tcoins(uid, nft['upgrade_cost'], f'Апгрейд NFT #{item["nft_id"]}')
     await remove_nft_from_inventory(inv_id, uid)
-    # 25% шанс успеха
     won = random.random() < 0.25
     if won:
         await add_nft_to_inventory(uid, nft['upgrade_to'])
@@ -150,12 +149,12 @@ async def api_upgrade(request):
 async def create_app():
     await init_db()
     app = web.Application()
-    app.router.add_get('/api/me',       api_me)
-    app.router.add_post('/api/buy',     api_buy)
-    app.router.add_post('/api/sell',    api_sell)
-    app.router.add_post('/api/upgrade', api_upgrade)
-    app.router.add_static('/', WEBAPP_DIR, show_index=False, follow_symlinks=True, append_version=False)
-    app.router.add_get('/', lambda r: web.FileResponse(os.path.join(WEBAPP_DIR, 'index.html')))
+    app.router.add_get('/',                  handle_index)
+    app.router.add_get('/api/me',            api_me)
+    app.router.add_post('/api/buy',          api_buy)
+    app.router.add_post('/api/sell',         api_sell)
+    app.router.add_post('/api/upgrade',      api_upgrade)
+    app.router.add_get('/{filename}',        handle_file)
     return app
 
 if __name__ == '__main__':
