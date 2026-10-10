@@ -514,6 +514,8 @@ async def cmd_givecoin(msg: Message):
 async def main():
     await init_db()
     print("✅ TIDE BOT запущен!")
+    # Удаляем вебхук и сбрасываем очередь перед стартом
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
