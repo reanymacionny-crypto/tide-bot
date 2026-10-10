@@ -361,7 +361,8 @@ function renderUpgrade() {
       <!-- Колесо -->
       <div class="wheel-container" id="wheel-container" style="display:none">
         <canvas id="wheel-canvas" width="300" height="300"></canvas>
-        <div class="wheel-arrow" id="wheel-arrow">▼</div>
+        <div class="wheel-arrow" id="wheel-arrow"></div>
+        <div class="wheel-center-dot"></div>
         <div class="wheel-result" id="wheel-result"></div>
       </div>
 
@@ -396,20 +397,13 @@ function onChanceChange(val) {
 
 function updateChanceUI() {
   const chance = state.upgradeChance || 50;
-  const fromNft = NFTS[state.upgradeFromId];
-  const toNft   = NFTS[state.upgradeTo];
   const vi = document.getElementById('upg-chance-val');
   const ii = document.getElementById('upg-chance-info');
   const sl = document.getElementById('upg-slider');
   if (vi) vi.textContent = chance + '%';
   if (sl) sl.value = chance;
-  // Цена апгрейда = разница в цене * (1 / шанс) * 0.3 (коэффициент)
-  if (fromNft && toNft && ii) {
-    const diff = Math.max(0, toNft.price - fromNft.price);
-    const cost = Math.round(diff * (1 / (chance / 100)) * 0.3);
-    ii.textContent = cost > 0 ? `Стоимость апгрейда: ${cost.toLocaleString()} TC` : 'Бесплатно';
-    state.upgradeCost = cost;
-  }
+  if (ii) ii.textContent = 'Апгрейд бесплатный';
+  state.upgradeCost = 0;
 }
 
 function showWheelUI() {
@@ -425,7 +419,7 @@ function showWheelUI() {
 }
 
 // ── WHEEL DRAWING ──────────────────────────────────────
-function drawWheel(rotation = 0) {
+function drawWheel() {
   const canvas = document.getElementById('wheel-canvas');
   if (!canvas) return;
   const ctx    = canvas.getContext('2d');
@@ -438,110 +432,102 @@ function drawWheel(rotation = 0) {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Тень
-  ctx.save();
-  ctx.shadowColor = 'rgba(200,168,75,.3)';
-  ctx.shadowBlur  = 20;
-
-  // Сегмент ПРОИГРЫШ (красный) — верхняя часть по chance
+  // Проигрыш (красный) — левая половина по (1-chance)
   const loseAngle = (1 - chance) * Math.PI * 2;
   const winAngle  = chance       * Math.PI * 2;
-  const startRot  = rotation - Math.PI / 2; // старт сверху
+  const startRot  = -Math.PI / 2; // старт сверху (стрелка указывает вверх)
 
-  // Проигрыш
+  // Сегмент проигрыша
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.arc(cx, cy, r, startRot, startRot + loseAngle);
   ctx.closePath();
   ctx.fillStyle = '#2a0a0a';
   ctx.fill();
-  ctx.strokeStyle = '#1a0505';
-  ctx.lineWidth = 2;
-  ctx.stroke();
 
-  // Победа
+  // Сегмент победы
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.arc(cx, cy, r, startRot + loseAngle, startRot + loseAngle + winAngle);
   ctx.closePath();
   ctx.fillStyle = '#0a2a0a';
   ctx.fill();
-  ctx.strokeStyle = '#051505';
-  ctx.lineWidth = 2;
-  ctx.stroke();
 
-  ctx.restore();
-
-  // Граница круга
+  // Граница
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.strokeStyle = '#333350';
-  ctx.lineWidth   = 3;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Разделитель
+  // Разделительная линия
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(rotation);
   ctx.beginPath();
   ctx.moveTo(0, -r);
   ctx.lineTo(0, r);
-  ctx.strokeStyle = 'rgba(255,255,255,.15)';
+  ctx.strokeStyle = 'rgba(255,255,255,.2)';
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.restore();
 
   // Иконки NFT в сегментах
-  const fromImg = fromNft ? new Image() : null;
-  const toImg   = toNft   ? new Image() : null;
+  const loseAngleMid = startRot + loseAngle / 2;
+  const winAngleMid  = startRot + loseAngle + winAngle / 2;
+  const dist = r * 0.58;
 
-  function drawIcons() {
-    const loseAngleMid = startRot + loseAngle / 2;
-    const winAngleMid  = startRot + loseAngle + winAngle / 2;
-    const dist = r * 0.6;
-
-    // Проигрыш — иконка моего NFT
-    if (fromImg && fromImg.complete && fromImg.naturalWidth) {
-      const fx = cx + Math.cos(loseAngleMid) * dist - 28;
-      const fy = cy + Math.sin(loseAngleMid) * dist - 28;
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(fx, fy, 56, 56, 8);
-      ctx.clip();
-      ctx.drawImage(fromImg, fx, fy, 56, 56);
-      ctx.restore();
+  function drawSegIcons() {
+    // Иконка проигрыша (мой NFT)
+    if (fromNft?.img) {
+      const fx = cx + Math.cos(loseAngleMid) * dist - 24;
+      const fy = cy + Math.sin(loseAngleMid) * dist - 24;
+      const img = new Image();
+      img.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(fx, fy, 48, 48, 8);
+        ctx.clip();
+        ctx.drawImage(img, fx, fy, 48, 48);
+        ctx.restore();
+      };
+      img.src = fromNft.img;
     }
-
-    // Победа — иконка цели
-    if (toImg && toImg.complete && toImg.naturalWidth) {
-      const tx = cx + Math.cos(winAngleMid) * dist - 28;
-      const ty = cy + Math.sin(winAngleMid) * dist - 28;
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(tx, ty, 56, 56, 8);
-      ctx.clip();
-      ctx.drawImage(toImg, tx, ty, 56, 56);
-      ctx.restore();
+    // Иконка победы (цель)
+    if (toNft?.img) {
+      const tx = cx + Math.cos(winAngleMid) * dist - 24;
+      const ty = cy + Math.sin(winAngleMid) * dist - 24;
+      const img2 = new Image();
+      img2.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(tx, ty, 48, 48, 8);
+        ctx.clip();
+        ctx.drawImage(img2, tx, ty, 48, 48);
+        ctx.restore();
+      };
+      img2.src = toNft.img;
     }
-
-    // Текст % в сегментах
+    // % текст
     ctx.save();
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillStyle = 'rgba(255,80,80,.9)';
+    ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
-    const lx = cx + Math.cos(loseAngleMid) * (r * 0.85);
-    const ly = cy + Math.sin(loseAngleMid) * (r * 0.85);
-    ctx.fillText(`${Math.round((1 - chance) * 100)}%`, lx, ly);
-
-    ctx.fillStyle = 'rgba(80,255,120,.9)';
-    const wx = cx + Math.cos(winAngleMid) * (r * 0.85);
-    const wy = cy + Math.sin(winAngleMid) * (r * 0.85);
-    ctx.fillText(`${Math.round(chance * 100)}%`, wx, wy);
+    ctx.fillStyle = 'rgba(255,100,100,.9)';
+    ctx.fillText(
+      `${Math.round((1 - chance) * 100)}%`,
+      cx + Math.cos(loseAngleMid) * (r * 0.88),
+      cy + Math.sin(loseAngleMid) * (r * 0.88) + 4
+    );
+    ctx.fillStyle = 'rgba(80,220,100,.9)';
+    ctx.fillText(
+      `${Math.round(chance * 100)}%`,
+      cx + Math.cos(winAngleMid) * (r * 0.88),
+      cy + Math.sin(winAngleMid) * (r * 0.88) + 4
+    );
     ctx.restore();
 
     // Центральный круг
     ctx.beginPath();
-    ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 16, 0, Math.PI * 2);
     ctx.fillStyle = '#0a0a14';
     ctx.fill();
     ctx.strokeStyle = 'rgba(200,168,75,.5)';
@@ -549,29 +535,23 @@ function drawWheel(rotation = 0) {
     ctx.stroke();
   }
 
-  if (fromNft?.img) {
-    fromImg.src = fromNft.img;
-    fromImg.onload = drawIcons;
-  }
-  if (toNft?.img) {
-    toImg.src = toNft.img;
-    toImg.onload = drawIcons;
-  }
-  drawIcons();
+  drawSegIcons();
+}
+
+// Рисуем стрелку с вращением
+function drawArrow(angle) {
+  const arrow = document.getElementById('wheel-arrow');
+  if (!arrow) return;
+  // transform-origin = left center (центр колеса)
+  // angle в радианах — переводим в градусы
+  const deg = (angle * 180 / Math.PI) % 360;
+  arrow.style.transform = `translateY(-50%) rotate(${deg}deg)`;
 }
 
 async function spinWheel() {
   if (state.spinning) return;
   if (!state.upgradeFrom || !state.upgradeTo) {
     toast('Выбери свой NFT и цель!', 'error');
-    return;
-  }
-  const fromNft = NFTS[state.upgradeFromId];
-  const toNft   = NFTS[state.upgradeTo];
-  const cost    = state.upgradeCost || 0;
-
-  if (state.balance < cost) {
-    toast(`Недостаточно TC! Нужно ${cost}`, 'error');
     return;
   }
 
@@ -585,47 +565,53 @@ async function spinWheel() {
   let won = false;
   try {
     const res = await apiPost('/upgrade', {
-      inv_id:  state.upgradeFrom,
-      to_id:   state.upgradeTo,
-      chance:  state.upgradeChance || 50,
-      cost:    cost,
+      inv_id: state.upgradeFrom,
+      to_id:  state.upgradeTo,
+      chance: state.upgradeChance || 50,
+      cost:   0,
     });
     won = res.ok === true;
     if (res.balance !== undefined) state.balance = res.balance;
     if (res.inventory) state.inventory = res.inventory;
   } catch {
     won = Math.random() * 100 < (state.upgradeChance || 50);
-    state.balance -= cost;
     state.inventory = state.inventory.filter(i => i.inv_id !== state.upgradeFrom);
     if (won) state.inventory.push({ inv_id: Date.now(), nft_id: state.upgradeTo });
   }
 
-  // Анимация колеса
-  const chance     = (state.upgradeChance || 50) / 100;
-  const totalRots  = (5 + Math.random() * 3) * Math.PI * 2;
-  const loseZone   = (1 - chance) * Math.PI * 2;
-  const winZone    = chance       * Math.PI * 2;
-  // Стоп: в зоне победы или проигрыша
-  const stopInWin  = Math.random() * winZone  + loseZone + 0.1;
-  const stopInLose = Math.random() * (loseZone - 0.2) + 0.1;
-  const stopAngle  = won ? stopInWin : stopInLose;
-  const finalAngle = totalRots + stopAngle;
+  const chance    = (state.upgradeChance || 50) / 100;
+  const toNft     = NFTS[state.upgradeTo];
+  // Зона победы: от loseAngle до 2π (относительно верха -π/2)
+  const loseAngle = (1 - chance) * Math.PI * 2;
 
+  // Стрелка крутится несколько раз + останавливается в нужной зоне
+  const fullRots   = (4 + Math.floor(Math.random() * 3)) * Math.PI * 2;
+  // Финальный угол в нужной зоне
+  const winZoneStart  = loseAngle + 0.15;
+  const winZoneEnd    = Math.PI * 2 - 0.15;
+  const loseZoneStart = 0.15;
+  const loseZoneEnd   = loseAngle - 0.15;
+
+  const stopAngle = won
+    ? winZoneStart  + Math.random() * (winZoneEnd  - winZoneStart)
+    : loseZoneStart + Math.random() * Math.max(0.01, loseZoneEnd - loseZoneStart);
+
+  const finalAngle = fullRots + stopAngle;
   const t0  = performance.now();
-  const dur = 3500;
+  const dur = 3800;
 
   function anim(now) {
     const p = Math.min((now - t0) / dur, 1);
-    const e = 1 - Math.pow(1 - p, 4); // ease-out quart
-    drawWheel(e * finalAngle);
+    const e = 1 - Math.pow(1 - p, 4);
+    drawArrow(e * finalAngle);
     if (p < 1) { requestAnimationFrame(anim); return; }
 
-    // Финал
+    drawArrow(stopAngle);
     state.spinning = false;
     if (btn) btn.disabled = false;
     if (resultEl) {
       if (won) {
-        resultEl.textContent = `Победа! Получен ${toNft.name}!`;
+        resultEl.textContent = `Победа! Получен ${toNft?.name}!`;
         resultEl.className = 'wheel-result win';
         toast('Апгрейд успешен!', 'success');
       } else {
@@ -637,10 +623,9 @@ async function spinWheel() {
     state.upgradeFrom   = null;
     state.upgradeFromId = null;
     state.upgradeTo     = null;
-    state.upgradeCost   = 0;
     renderHome();
     renderInventory();
-    setTimeout(() => renderUpgrade(), 2000);
+    setTimeout(() => renderUpgrade(), 2200);
   }
   requestAnimationFrame(anim);
 }

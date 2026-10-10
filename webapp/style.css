@@ -769,14 +769,40 @@ html, body {
 }
 .wheel-arrow {
   position: absolute;
-  top: -16px;
+  /* Стрелка в центре колеса, крутится вокруг центра */
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  font-size: 28px;
-  color: var(--gold);
-  filter: drop-shadow(0 0 6px rgba(200,168,75,.6));
+  width: 130px;
+  height: 4px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 40%, var(--gold) 100%);
+  transform-origin: left center;
+  transform: translateY(-50%);
+  border-radius: 2px;
   pointer-events: none;
   z-index: 5;
+  transition: none;
+}
+.wheel-arrow::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 8px solid transparent;
+  border-left-color: var(--gold);
+}
+.wheel-center-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #0a0a14;
+  border: 2px solid rgba(200,168,75,.6);
+  border-radius: 50%;
+  z-index: 6;
+  pointer-events: none;
 }
 .wheel-result {
   font-size: 14px;
