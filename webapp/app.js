@@ -353,9 +353,14 @@ function renderUpgrade() {
       <div class="upg-chance-row" id="upg-chance-row" style="display:none">
         <div class="upg-chance-label">Шанс победы</div>
         <div class="upg-chance-val" id="upg-chance-val">50%</div>
-        <input type="range" class="upg-slider" id="upg-slider" min="5" max="95" value="50"
+        <div class="upg-mult-btns">
+          <button class="upg-mult active" onclick="setChance(50,'x2')">X2<span>50%</span></button>
+          <button class="upg-mult" onclick="setChance(25,'x3')">X3<span>25%</span></button>
+          <button class="upg-mult" onclick="setChance(12,'x4')">X4<span>12%</span></button>
+        </div>
+        <input type="range" class="upg-slider" id="upg-slider" min="5" max="75" value="50"
           oninput="onChanceChange(this.value)">
-        <div class="upg-chance-info" id="upg-chance-info">Цена: —</div>
+        <div class="upg-chance-info" id="upg-chance-info">Стоимость: —</div>
       </div>
 
       <!-- Колесо -->
@@ -367,8 +372,8 @@ function renderUpgrade() {
       </div>
 
       <button class="btn-primary" id="upg-spin-btn" style="display:none"
-        onclick="spinWheel()">
-        Крутить!
+        onclick="spinWheel()" id="upg-spin-btn">
+        Крутить колесо
       </button>
     </div>`;
 
@@ -385,25 +390,61 @@ function selectUpgFrom(invId, nftId) {
 }
 
 function selectUpgTo(nftId) {
-  state.upgradeTo = nftId;
+  // Нельзя апгрейдить в тот же NFT
+  if (state.upgradeFromId && parseInt(nftId) === state.upgradeFromId) {
+    toast('Нельзя апгрейдить в тот же NFT!', 'error');
+    return;
+  }
+  state.upgradeTo = parseInt(nftId);
   renderUpgrade();
+}
+
+function setChance(val, mult) {
+  state.upgradeChance = val;
+  document.querySelectorAll('.upg-mult').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const sl = document.getElementById('upg-slider');
+  if (sl) sl.value = val;
+  updateChanceUI();
+  drawWheel();
 }
 
 function onChanceChange(val) {
   state.upgradeChance = parseInt(val);
+  // Снимаем активность с кнопок мультов
+  document.querySelectorAll('.upg-mult').forEach(b => {
+    const v = parseInt(b.querySelector('span').textContent);
+    b.classList.toggle('active', v === state.upgradeChance);
+  });
   updateChanceUI();
   drawWheel();
 }
 
 function updateChanceUI() {
-  const chance = state.upgradeChance || 50;
+  const chance  = state.upgradeChance || 50;
+  const fromNft = NFTS[state.upgradeFromId];
+  const toNft   = NFTS[state.upgradeTo];
   const vi = document.getElementById('upg-chance-val');
   const ii = document.getElementById('upg-chance-info');
   const sl = document.getElementById('upg-slider');
   if (vi) vi.textContent = chance + '%';
   if (sl) sl.value = chance;
-  if (ii) ii.textContent = 'Апгрейд бесплатный';
-  state.upgradeCost = 0;
+  // Цена: чем выше шанс → дороже
+  // Базовая цена = разница между NFT * коэффициент шанса
+  if (fromNft && toNft && ii) {
+    const priceDiff = Math.max(toNft.price - fromNft.price, 50);
+    // X4(12%) = базовая, X3(25%) = x1.5, X2(50%) = x2.5, 75% = x4
+    const mult = chance <= 12  ? 1
+               : chance <= 25  ? 1.5
+               : chance <= 50  ? 2.5
+               : 4;
+    const cost = Math.round(priceDiff * mult * 0.15);
+    state.upgradeCost = cost;
+    ii.textContent = `Стоимость: ${cost.toLocaleString()} TC`;
+  } else {
+    state.upgradeCost = 0;
+    if (ii) ii.textContent = 'Выбери NFT';
+  }
 }
 
 function showWheelUI() {
@@ -552,6 +593,15 @@ async function spinWheel() {
   if (state.spinning) return;
   if (!state.upgradeFrom || !state.upgradeTo) {
     toast('Выбери свой NFT и цель!', 'error');
+    return;
+  }
+  if (state.upgradeFromId === state.upgradeTo) {
+    toast('Нельзя апгрейдить в тот же NFT!', 'error');
+    return;
+  }
+  const cost = state.upgradeCost || 0;
+  if (state.balance < cost) {
+    toast(`Недостаточно TC! Нужно ${cost.toLocaleString()}`, 'error');
     return;
   }
 
