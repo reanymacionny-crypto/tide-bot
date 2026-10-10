@@ -41,12 +41,12 @@ def get_user_id(request: web.Request) -> int | None:
 
 # ── STATIC WEBAPP ─────────────────────────────────────────────
 async def handle_static(request):
-    path = request.path.lstrip('/')
-    if not path:
-        path = 'index.html'
-    file_path = os.path.join(WEBAPP_DIR, path)
-    if not os.path.abspath(file_path).startswith(os.path.abspath(WEBAPP_DIR)):
-        raise web.HTTPForbidden()
+    rel = str(request.rel_url).lstrip('/')
+    if not rel or rel == '/':
+        rel = 'index.html'
+    # Убираем query string
+    rel = rel.split('?')[0]
+    file_path = os.path.join(WEBAPP_DIR, rel)
     if not os.path.exists(file_path):
         file_path = os.path.join(WEBAPP_DIR, 'index.html')
     return web.FileResponse(file_path)
@@ -154,8 +154,7 @@ async def create_app():
     app.router.add_post('/api/buy',     api_buy)
     app.router.add_post('/api/sell',    api_sell)
     app.router.add_post('/api/upgrade', api_upgrade)
-    app.router.add_get('/',             lambda r: handle_static(web.Request))
-    app.router.add_get('/{path:.*}',    handle_static)
+    app.router.add_static('/', WEBAPP_DIR, show_index=True, follow_symlinks=True)
     return app
 
 if __name__ == '__main__':
