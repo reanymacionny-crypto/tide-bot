@@ -1,7 +1,85 @@
-// Реальные Telegram подарки — картинки с GitHub CDN (raw.githubusercontent.com)
-const CDN = 'https://raw.githubusercontent.com/denzyve/cdn-telegram-gifts/main/assets/png';
+// Реальные Telegram подарки
+// Картинки — SVG градиенты с правильными эмодзи (CDN ненадёжен)
+function makeCard(bg1, bg2, emoji) {
+  const s = `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'>
+    <defs><radialGradient id='g' cx='50%' cy='35%' r='65%'>
+      <stop offset='0%' stop-color='${bg1}'/><stop offset='100%' stop-color='${bg2}'/>
+    </radialGradient></defs>
+    <rect width='200' height='200' rx='20' fill='url(#g)'/>
+    <text x='100' y='118' font-size='96' text-anchor='middle' dominant-baseline='middle'>${emoji}</text>
+  </svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(s);
+}
+
+const R = {
+  c1:'#1a2a1a', c2:'#0d150d',  // Common зелёный
+  r1:'#0d1e3a', r2:'#061228',  // Rare синий
+  e1:'#200d3a', e2:'#110820',  // Epic фиолетовый
+  l1:'#2a1a05', l2:'#150d00',  // Legendary золотой
+};
 
 const NFTS = {
+  1:  {name:"Homemade Cake",    rarity:"Common",    price:100,  sell:8,   upgTo:21, upgCost:150,  desc:"Домашний торт.", img:makeCard(R.c1,R.c2,'🎂')},
+  2:  {name:"Jelly Bunny",      rarity:"Common",    price:100,  sell:8,   upgTo:22, upgCost:150,  desc:"Желейный кролик.", img:makeCard(R.c1,R.c2,'🐰')},
+  3:  {name:"Santa Hat",        rarity:"Common",    price:120,  sell:10,  upgTo:23, upgCost:180,  desc:"Шапка Санты.", img:makeCard(R.c1,R.c2,'🎅')},
+  4:  {name:"Spiced Wine",      rarity:"Common",    price:120,  sell:10,  upgTo:24, upgCost:180,  desc:"Глинтвейн.", img:makeCard(R.c1,R.c2,'🍷')},
+  5:  {name:"Precious Peach",   rarity:"Common",    price:80,   sell:6,   upgTo:25, upgCost:120,  desc:"Дорогой персик.", img:makeCard(R.c1,R.c2,'🍑')},
+  6:  {name:"Lol Pop",          rarity:"Common",    price:80,   sell:6,   upgTo:26, upgCost:120,  desc:"Леденец.", img:makeCard(R.c1,R.c2,'🍭')},
+  7:  {name:"Eternal Rose",     rarity:"Common",    price:150,  sell:12,  upgTo:27, upgCost:200,  desc:"Вечная роза.", img:makeCard(R.c1,R.c2,'🌹')},
+  8:  {name:"Desk Calendar",    rarity:"Common",    price:150,  sell:12,  upgTo:28, upgCost:200,  desc:"Настольный календарь.", img:makeCard(R.c1,R.c2,'📅')},
+  9:  {name:"Berry Box",        rarity:"Common",    price:100,  sell:8,   upgTo:29, upgCost:150,  desc:"Коробка с ягодами.", img:makeCard(R.c1,R.c2,'🍓')},
+  10: {name:"Perfume Bottle",   rarity:"Common",    price:90,   sell:7,   upgTo:30, upgCost:140,  desc:"Флакон духов.", img:makeCard(R.c1,R.c2,'🧴')},
+  11: {name:"Cookie Heart",     rarity:"Common",    price:200,  sell:18,  upgTo:31, upgCost:250,  desc:"Печенье-сердечко.", img:makeCard(R.c1,R.c2,'🍪')},
+  12: {name:"Nesting Doll",     rarity:"Common",    price:180,  sell:15,  upgTo:32, upgCost:220,  desc:"Матрёшка.", img:makeCard(R.c1,R.c2,'🪆')},
+  13: {name:"Top Hat",          rarity:"Common",    price:180,  sell:15,  upgTo:33, upgCost:220,  desc:"Цилиндр.", img:makeCard(R.c1,R.c2,'🎩')},
+  14: {name:"Voodoo Doll",      rarity:"Common",    price:200,  sell:18,  upgTo:34, upgCost:250,  desc:"Кукла вуду.", img:makeCard(R.c1,R.c2,'🧸')},
+  15: {name:"Spy Agaric",       rarity:"Common",    price:220,  sell:20,  upgTo:35, upgCost:270,  desc:"Мухомор.", img:makeCard(R.c1,R.c2,'🍄')},
+  16: {name:"Evil Eye",         rarity:"Common",    price:250,  sell:22,  upgTo:36, upgCost:300,  desc:"Злой глаз.", img:makeCard(R.c1,R.c2,'🧿')},
+  17: {name:"Love Candle",      rarity:"Common",    price:250,  sell:22,  upgTo:37, upgCost:300,  desc:"Свеча любви.", img:makeCard(R.c1,R.c2,'🕯️')},
+  18: {name:"Snow Globe",       rarity:"Common",    price:220,  sell:20,  upgTo:38, upgCost:270,  desc:"Снежный шар.", img:makeCard(R.c1,R.c2,'🔮')},
+  19: {name:"Hex Pot",          rarity:"Common",    price:200,  sell:18,  upgTo:39, upgCost:250,  desc:"Котёл зелий.", img:makeCard(R.c1,R.c2,'🫧')},
+  20: {name:"Diamond Ring",     rarity:"Common",    price:300,  sell:28,  upgTo:40, upgCost:350,  desc:"Кольцо с бриллиантом.", img:makeCard(R.c1,R.c2,'💍')},
+  21: {name:"Golden Cake",      rarity:"Rare",      price:600,  sell:55,  upgTo:41, upgCost:700,  desc:"Золотой торт.", img:makeCard(R.r1,R.r2,'🎂')},
+  22: {name:"Crystal Bunny",    rarity:"Rare",      price:600,  sell:55,  upgTo:42, upgCost:700,  desc:"Кристальный кролик.", img:makeCard(R.r1,R.r2,'🐰')},
+  23: {name:"Cosmic Santa",     rarity:"Rare",      price:700,  sell:65,  upgTo:43, upgCost:800,  desc:"Космический Санта.", img:makeCard(R.r1,R.r2,'🎅')},
+  24: {name:"Eternal Wine",     rarity:"Rare",      price:700,  sell:65,  upgTo:44, upgCost:800,  desc:"Вечный глинтвейн.", img:makeCard(R.r1,R.r2,'🍷')},
+  25: {name:"Diamond Peach",    rarity:"Rare",      price:800,  sell:75,  upgTo:45, upgCost:900,  desc:"Бриллиантовый персик.", img:makeCard(R.r1,R.r2,'🍑')},
+  26: {name:"Royal Lol Pop",    rarity:"Rare",      price:800,  sell:75,  upgTo:46, upgCost:900,  desc:"Королевский леденец.", img:makeCard(R.r1,R.r2,'🍭')},
+  27: {name:"Neon Rose",        rarity:"Rare",      price:900,  sell:85,  upgTo:47, upgCost:1000, desc:"Неоновая роза.", img:makeCard(R.r1,R.r2,'🌹')},
+  28: {name:"Infinity Calendar",rarity:"Rare",      price:950,  sell:90,  upgTo:48, upgCost:1050, desc:"Бесконечный календарь.", img:makeCard(R.r1,R.r2,'📅')},
+  29: {name:"Galaxy Berries",   rarity:"Rare",      price:900,  sell:85,  upgTo:49, upgCost:1000, desc:"Галактические ягоды.", img:makeCard(R.r1,R.r2,'🍓')},
+  30: {name:"Gold Perfume",     rarity:"Rare",      price:850,  sell:80,  upgTo:50, upgCost:950,  desc:"Золотые духи.", img:makeCard(R.r1,R.r2,'🧴')},
+  31: {name:"Mystic Cookie",    rarity:"Rare",      price:1000, sell:95,  upgTo:51, upgCost:1200, desc:"Мистическое печенье.", img:makeCard(R.r1,R.r2,'🍪')},
+  32: {name:"Ancient Doll",     rarity:"Rare",      price:950,  sell:90,  upgTo:52, upgCost:1100, desc:"Древняя матрёшка.", img:makeCard(R.r1,R.r2,'🪆')},
+  33: {name:"Shadow Hat",       rarity:"Rare",      price:1000, sell:95,  upgTo:53, upgCost:1200, desc:"Шляпа теней.", img:makeCard(R.r1,R.r2,'🎩')},
+  34: {name:"Dark Voodoo",      rarity:"Rare",      price:1100, sell:100, upgTo:54, upgCost:1300, desc:"Тёмная кукла вуду.", img:makeCard(R.r1,R.r2,'🧸')},
+  35: {name:"Magic Mushroom",   rarity:"Rare",      price:1100, sell:100, upgTo:55, upgCost:1300, desc:"Волшебный мухомор.", img:makeCard(R.r1,R.r2,'🍄')},
+  36: {name:"Cursed Eye",       rarity:"Rare",      price:1200, sell:110, upgTo:null,upgCost:0,   desc:"Проклятый глаз.", img:makeCard(R.r1,R.r2,'🧿')},
+  37: {name:"Eternal Flame",    rarity:"Rare",      price:1200, sell:110, upgTo:null,upgCost:0,   desc:"Вечное пламя.", img:makeCard(R.r1,R.r2,'🔥')},
+  38: {name:"Blizzard Globe",   rarity:"Rare",      price:1100, sell:100, upgTo:null,upgCost:0,   desc:"Шар метели.", img:makeCard(R.r1,R.r2,'🔮')},
+  39: {name:"Chaos Pot",        rarity:"Rare",      price:1100, sell:100, upgTo:null,upgCost:0,   desc:"Котёл хаоса.", img:makeCard(R.r1,R.r2,'🫧')},
+  40: {name:"Eternal Diamond",  rarity:"Rare",      price:1300, sell:120, upgTo:null,upgCost:0,   desc:"Вечный бриллиант.", img:makeCard(R.r1,R.r2,'💎')},
+  41: {name:"Epic Cake",        rarity:"Epic",      price:3000, sell:300, upgTo:null,upgCost:0,   desc:"Эпический торт.", img:makeCard(R.e1,R.e2,'🎂')},
+  42: {name:"Legendary Bunny",  rarity:"Epic",      price:3500, sell:350, upgTo:null,upgCost:0,   desc:"Легендарный кролик.", img:makeCard(R.e1,R.e2,'🐰')},
+  43: {name:"Galactic Santa",   rarity:"Epic",      price:4000, sell:400, upgTo:null,upgCost:0,   desc:"Галактический Санта.", img:makeCard(R.e1,R.e2,'🎅')},
+  44: {name:"Divine Wine",      rarity:"Epic",      price:4000, sell:400, upgTo:null,upgCost:0,   desc:"Божественное вино.", img:makeCard(R.e1,R.e2,'🍷')},
+  45: {name:"Infinity Peach",   rarity:"Epic",      price:5000, sell:500, upgTo:null,upgCost:0,   desc:"Бесконечный персик.", img:makeCard(R.e1,R.e2,'🍑')},
+  46: {name:"Cosmic Pop",       rarity:"Epic",      price:5000, sell:500, upgTo:null,upgCost:0,   desc:"Космический леденец.", img:makeCard(R.e1,R.e2,'🍭')},
+  47: {name:"Supernova Rose",   rarity:"Epic",      price:6000, sell:600, upgTo:null,upgCost:0,   desc:"Роза сверхновой.", img:makeCard(R.e1,R.e2,'🌹')},
+  48: {name:"Immortal Ring",    rarity:"Epic",      price:6000, sell:600, upgTo:null,upgCost:0,   desc:"Бессмертное кольцо.", img:makeCard(R.e1,R.e2,'💍')},
+  49: {name:"God Eye",          rarity:"Epic",      price:5500, sell:550, upgTo:null,upgCost:0,   desc:"Глаз бога.", img:makeCard(R.e1,R.e2,'🧿')},
+  50: {name:"TIDE GOD GIFT",    rarity:"Legendary", price:15000,sell:1600,upgTo:null,upgCost:0,   desc:"Самый редкий подарок.", img:makeCard(R.l1,R.l2,'👑')},
+  51: {name:"Phantom Cake",     rarity:"Epic",      price:1200, sell:110, upgTo:null,upgCost:0,   desc:"Торт-призрак.", img:makeCard(R.e1,R.e2,'👻')},
+  52: {name:"Storm Doll",       rarity:"Epic",      price:1300, sell:120, upgTo:null,upgCost:0,   desc:"Матрёшка грозы.", img:makeCard(R.e1,R.e2,'⚡')},
+  53: {name:"Shadow Crown",     rarity:"Epic",      price:1400, sell:130, upgTo:null,upgCost:0,   desc:"Корона теней.", img:makeCard(R.e1,R.e2,'👑')},
+  54: {name:"Blood Voodoo",     rarity:"Epic",      price:1500, sell:145, upgTo:null,upgCost:0,   desc:"Кровавая кукла.", img:makeCard(R.e1,R.e2,'🩸')},
+  55: {name:"Toxic Shroom",     rarity:"Epic",      price:1600, sell:155, upgTo:null,upgCost:0,   desc:"Токсичный мухомор.", img:makeCard(R.e1,R.e2,'☠️')},
+  56: {name:"Void Eye",         rarity:"Legendary", price:8000, sell:850, upgTo:null,upgCost:0,   desc:"Глаз пустоты.", img:makeCard(R.l1,R.l2,'👁️')},
+  57: {name:"Inferno Candle",   rarity:"Legendary", price:9000, sell:950, upgTo:null,upgCost:0,   desc:"Свеча адского огня.", img:makeCard(R.l1,R.l2,'🔥')},
+  58: {name:"Abyss Globe",      rarity:"Legendary", price:10000,sell:1050,upgTo:null,upgCost:0,   desc:"Шар бездны.", img:makeCard(R.l1,R.l2,'🌑')},
+  59: {name:"Chaos Diamond",    rarity:"Legendary", price:12000,sell:1300,upgTo:null,upgCost:0,   desc:"Бриллиант хаоса.", img:makeCard(R.l1,R.l2,'💠')},
+  60: {name:"GOD RING",         rarity:"Legendary", price:20000,sell:2200,upgTo:null,upgCost:0,   desc:"Кольцо бога.", img:makeCard(R.l1,R.l2,'💫')},
+};
   1:  {name:"Homemade Cake",    rarity:"Common",    price:100,  sell:8,   upgTo:21, upgCost:150,  desc:"Домашний торт — один из первых подарков Telegram.",  img:`${CDN}/gift_5167939598143193218.png`},
   2:  {name:"Jelly Bunny",      rarity:"Common",    price:100,  sell:8,   upgTo:22, upgCost:150,  desc:"Желейный кролик.",                                   img:`${CDN}/gift_5168043875654172773.png`},
   3:  {name:"Santa Hat",        rarity:"Common",    price:120,  sell:10,  upgTo:23, upgCost:180,  desc:"Шапка Санты.",                                       img:`${CDN}/gift_5168103777563050263.png`},
