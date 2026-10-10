@@ -123,20 +123,32 @@ async def api_upgrade(request):
         return web.json_response({'error': 'Unauthorized'}, status=401)
     data   = await request.json()
     inv_id = int(data.get('inv_id', 0))
-    item   = await get_inv_item(inv_id, uid)
+    to_id  = int(data.get('to_id', 0))
+    chance = max(5, min(95, int(data.get('chance', 50))))
+    cost   = max(0, int(data.get('cost', 0)))
+
+    item = await get_inv_item(inv_id, uid)
     if not item:
         return web.json_response({'error': 'NFT не найден'})
-    nft = get_nft(item['nft_id'])
-    if not nft.get('upgrade_to'):
-        return web.json_response({'error': 'Нельзя апгрейдить'})
-    user = await get_user(uid)
-    if user['tcoins'] < nft['upgrade_cost']:
-        return web.json_response({'error': 'Недостаточно T Coins'})
-    await spend_tcoins(uid, nft['upgrade_cost'], f'Апгрейд NFT #{item["nft_id"]}')
+    to_nft = get_nft(to_id)
+    if not to_nft:
+        return web.json_response({'error': 'Целевой NFT не найден'})
+
+    # Списываем стоимость если есть
+    if cost > 0:
+        user = await get_user(uid)
+        if not user or user['tcoins'] < cost:
+            return web.json_response({'error': 'Недостаточно T Coins'})
+        await spend_tcoins(uid, cost, f'Апгрейд до NFT #{to_id}')
+
+    # Удаляем исходный NFT
     await remove_nft_from_inventory(inv_id, uid)
-    won = random.random() < 0.25
+
+    # Бросаем кубик
+    won = random.random() * 100 < chance
     if won:
-        await add_nft_to_inventory(uid, nft['upgrade_to'])
+        await add_nft_to_inventory(uid, to_id)
+
     user = await get_user(uid)
     inv  = await get_user_inventory(uid)
     return web.json_response({

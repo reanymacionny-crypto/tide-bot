@@ -305,141 +305,344 @@ async function sellNft(invId, nftId) {
 // ── UPGRADE ───────────────────────────────────────────
 function renderUpgrade() {
   const el = document.getElementById('screen-upgrade');
-  const upgradeable = state.inventory.filter(i => NFTS[i.nft_id]?.upgTo);
-
-  if (!upgradeable.length) {
-    el.innerHTML = `
-      <div class="upgrade-wrap">
-        <div class="upgrade-title">Апгрейд</div>
-        <div class="upgrade-sub">Нет NFT для апгрейда. Купи Common или Rare в маркете!</div>
-      </div>`;
-    return;
-  }
-
-  const selItem = upgradeable.find(i => i.inv_id === state.upgradeInvId) || upgradeable[0];
-  const fromNft = NFTS[selItem.nft_id];
-  const toNft   = NFTS[fromNft.upgTo];
+  // Все NFT из инвентаря — можно апгрейдить любой
+  const inv = state.inventory;
 
   el.innerHTML = `
     <div class="upgrade-wrap">
       <div class="upgrade-title">Апгрейд</div>
-      <div class="upgrade-sub">Прокачай NFT до более редкого!</div>
+      <div class="upgrade-sub">Выбери свой NFT и цель — крути колесо!</div>
 
-      <select class="upgrade-select" id="_upg_sel" onchange="onUpgSel()">
-        ${upgradeable.map(i => {
-          const n = NFTS[i.nft_id];
-          return `<option value="${i.inv_id}" ${i.inv_id===selItem.inv_id?'selected':''}>${n.name} (${n.rarity})</option>`;
-        }).join('')}
-      </select>
-
-      <div class="upgrade-preview">
-        <div class="upg-box">
-          <img src="${fromNft.img}" onerror="this.style.display='none'" loading="lazy">
-          <div class="upg-box-name">${fromNft.name}</div>
-          <div class="upg-box-rarity" style="color:var(--${fromNft.rarity.toLowerCase()})">${fromNft.rarity}</div>
+      <div class="upg-panels">
+        <!-- Левая: мои NFT -->
+        <div class="upg-panel">
+          <div class="upg-panel-title">Мой NFT</div>
+          <div class="upg-panel-list" id="upg-my-list">
+            ${inv.length === 0
+              ? '<div class="upg-empty">Нет NFT.<br>Купи в маркете!</div>'
+              : inv.map(item => {
+                  const n = NFTS[item.nft_id];
+                  if (!n) return '';
+                  return `<div class="upg-item ${state.upgradeFrom===item.inv_id?'selected':''}"
+                    onclick="selectUpgFrom(${item.inv_id}, ${item.nft_id})">
+                    <img src="${n.img}" onerror="this.style.opacity='.2'" loading="lazy">
+                    <div class="upg-item-name">${n.name}</div>
+                    <div class="upg-item-rar" style="color:var(--${n.rarity.toLowerCase()})">${n.rarity}</div>
+                  </div>`;
+                }).join('')
+            }
+          </div>
         </div>
-        <div class="upg-arrow">→</div>
-        <div class="upg-box target">
-          <img src="${toNft.img}" onerror="this.style.display='none'" loading="lazy">
-          <div class="upg-box-name">${toNft.name}</div>
-          <div class="upg-box-rarity" style="color:var(--${toNft.rarity.toLowerCase()})">${toNft.rarity}</div>
+
+        <!-- Правая: цель -->
+        <div class="upg-panel">
+          <div class="upg-panel-title">Цель</div>
+          <div class="upg-panel-list" id="upg-to-list">
+            ${Object.entries(NFTS).map(([id,n]) => `
+              <div class="upg-item ${state.upgradeTo===parseInt(id)?'selected':''}"
+                onclick="selectUpgTo(${id})">
+                <img src="${n.img}" onerror="this.style.opacity='.2'" loading="lazy">
+                <div class="upg-item-name">${n.name}</div>
+                <div class="upg-item-rar" style="color:var(--${n.rarity.toLowerCase()})">${n.rarity}</div>
+              </div>`).join('')}
+          </div>
         </div>
       </div>
 
-      <div class="spin-area">
-        <div class="spin-bar-wrap">
-          <div class="spin-track" id="_spin_track"></div>
-          <div class="spin-pointer"></div>
-        </div>
-        <div class="spin-result" id="_spin_res">Нажми апгрейд — испытай удачу!</div>
+      <!-- Шанс слайдер -->
+      <div class="upg-chance-row" id="upg-chance-row" style="display:none">
+        <div class="upg-chance-label">Шанс победы</div>
+        <div class="upg-chance-val" id="upg-chance-val">50%</div>
+        <input type="range" class="upg-slider" id="upg-slider" min="5" max="95" value="50"
+          oninput="onChanceChange(this.value)">
+        <div class="upg-chance-info" id="upg-chance-info">Цена: —</div>
       </div>
 
-      <button class="btn-primary" id="_upg_btn" onclick="doUpgrade()">
-        Апгрейд за ${fromNft.upgCost.toLocaleString()} TC
+      <!-- Колесо -->
+      <div class="wheel-container" id="wheel-container" style="display:none">
+        <canvas id="wheel-canvas" width="300" height="300"></canvas>
+        <div class="wheel-arrow" id="wheel-arrow">▼</div>
+        <div class="wheel-result" id="wheel-result"></div>
+      </div>
+
+      <button class="btn-primary" id="upg-spin-btn" style="display:none"
+        onclick="spinWheel()">
+        Крутить!
       </button>
     </div>`;
 
-  buildTrack(fromNft, toNft);
+  if (state.upgradeFrom && state.upgradeTo) {
+    updateChanceUI();
+    showWheelUI();
+  }
 }
 
-function onUpgSel() {
-  const v = document.getElementById('_upg_sel')?.value;
-  if (v) { state.upgradeInvId = parseInt(v); renderUpgrade(); }
+function selectUpgFrom(invId, nftId) {
+  state.upgradeFrom   = invId;
+  state.upgradeFromId = nftId;
+  renderUpgrade();
 }
 
-function buildTrack(fromNft, toNft) {
-  const track = document.getElementById('_spin_track');
-  if (!track) return;
-  const segs = Array.from({length: 40}, () => Math.random() < 0.25 ? 'win' : 'lose');
-  track.innerHTML = segs.map(s => `
-    <div class="spin-seg ${s==='win'?'win-seg':'lose-seg'}">
-      <img src="${s==='win'?toNft.img:fromNft.img}" loading="lazy" onerror="this.style.opacity='.2'">
-    </div>`).join('');
-  track._segs = segs;
+function selectUpgTo(nftId) {
+  state.upgradeTo = nftId;
+  renderUpgrade();
 }
 
-async function doUpgrade() {
+function onChanceChange(val) {
+  state.upgradeChance = parseInt(val);
+  updateChanceUI();
+  drawWheel();
+}
+
+function updateChanceUI() {
+  const chance = state.upgradeChance || 50;
+  const fromNft = NFTS[state.upgradeFromId];
+  const toNft   = NFTS[state.upgradeTo];
+  const vi = document.getElementById('upg-chance-val');
+  const ii = document.getElementById('upg-chance-info');
+  const sl = document.getElementById('upg-slider');
+  if (vi) vi.textContent = chance + '%';
+  if (sl) sl.value = chance;
+  // Цена апгрейда = разница в цене * (1 / шанс) * 0.3 (коэффициент)
+  if (fromNft && toNft && ii) {
+    const diff = Math.max(0, toNft.price - fromNft.price);
+    const cost = Math.round(diff * (1 / (chance / 100)) * 0.3);
+    ii.textContent = cost > 0 ? `Стоимость апгрейда: ${cost.toLocaleString()} TC` : 'Бесплатно';
+    state.upgradeCost = cost;
+  }
+}
+
+function showWheelUI() {
+  const cr = document.getElementById('upg-chance-row');
+  const wc = document.getElementById('wheel-container');
+  const sb = document.getElementById('upg-spin-btn');
+  if (cr) cr.style.display = 'block';
+  if (wc) wc.style.display = 'block';
+  if (sb) sb.style.display = 'block';
+  if (!state.upgradeChance) state.upgradeChance = 50;
+  updateChanceUI();
+  drawWheel();
+}
+
+// ── WHEEL DRAWING ──────────────────────────────────────
+function drawWheel(rotation = 0) {
+  const canvas = document.getElementById('wheel-canvas');
+  if (!canvas) return;
+  const ctx    = canvas.getContext('2d');
+  const cx     = canvas.width  / 2;
+  const cy     = canvas.height / 2;
+  const r      = cx - 10;
+  const chance = (state.upgradeChance || 50) / 100;
+  const fromNft = NFTS[state.upgradeFromId];
+  const toNft   = NFTS[state.upgradeTo];
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Тень
+  ctx.save();
+  ctx.shadowColor = 'rgba(200,168,75,.3)';
+  ctx.shadowBlur  = 20;
+
+  // Сегмент ПРОИГРЫШ (красный) — верхняя часть по chance
+  const loseAngle = (1 - chance) * Math.PI * 2;
+  const winAngle  = chance       * Math.PI * 2;
+  const startRot  = rotation - Math.PI / 2; // старт сверху
+
+  // Проигрыш
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, startRot, startRot + loseAngle);
+  ctx.closePath();
+  ctx.fillStyle = '#2a0a0a';
+  ctx.fill();
+  ctx.strokeStyle = '#1a0505';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Победа
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, startRot + loseAngle, startRot + loseAngle + winAngle);
+  ctx.closePath();
+  ctx.fillStyle = '#0a2a0a';
+  ctx.fill();
+  ctx.strokeStyle = '#051505';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.restore();
+
+  // Граница круга
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = '#333350';
+  ctx.lineWidth   = 3;
+  ctx.stroke();
+
+  // Разделитель
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+  ctx.beginPath();
+  ctx.moveTo(0, -r);
+  ctx.lineTo(0, r);
+  ctx.strokeStyle = 'rgba(255,255,255,.15)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+
+  // Иконки NFT в сегментах
+  const fromImg = fromNft ? new Image() : null;
+  const toImg   = toNft   ? new Image() : null;
+
+  function drawIcons() {
+    const loseAngleMid = startRot + loseAngle / 2;
+    const winAngleMid  = startRot + loseAngle + winAngle / 2;
+    const dist = r * 0.6;
+
+    // Проигрыш — иконка моего NFT
+    if (fromImg && fromImg.complete && fromImg.naturalWidth) {
+      const fx = cx + Math.cos(loseAngleMid) * dist - 28;
+      const fy = cy + Math.sin(loseAngleMid) * dist - 28;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(fx, fy, 56, 56, 8);
+      ctx.clip();
+      ctx.drawImage(fromImg, fx, fy, 56, 56);
+      ctx.restore();
+    }
+
+    // Победа — иконка цели
+    if (toImg && toImg.complete && toImg.naturalWidth) {
+      const tx = cx + Math.cos(winAngleMid) * dist - 28;
+      const ty = cy + Math.sin(winAngleMid) * dist - 28;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(tx, ty, 56, 56, 8);
+      ctx.clip();
+      ctx.drawImage(toImg, tx, ty, 56, 56);
+      ctx.restore();
+    }
+
+    // Текст % в сегментах
+    ctx.save();
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillStyle = 'rgba(255,80,80,.9)';
+    ctx.textAlign = 'center';
+    const lx = cx + Math.cos(loseAngleMid) * (r * 0.85);
+    const ly = cy + Math.sin(loseAngleMid) * (r * 0.85);
+    ctx.fillText(`${Math.round((1 - chance) * 100)}%`, lx, ly);
+
+    ctx.fillStyle = 'rgba(80,255,120,.9)';
+    const wx = cx + Math.cos(winAngleMid) * (r * 0.85);
+    const wy = cy + Math.sin(winAngleMid) * (r * 0.85);
+    ctx.fillText(`${Math.round(chance * 100)}%`, wx, wy);
+    ctx.restore();
+
+    // Центральный круг
+    ctx.beginPath();
+    ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+    ctx.fillStyle = '#0a0a14';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200,168,75,.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  if (fromNft?.img) {
+    fromImg.src = fromNft.img;
+    fromImg.onload = drawIcons;
+  }
+  if (toNft?.img) {
+    toImg.src = toNft.img;
+    toImg.onload = drawIcons;
+  }
+  drawIcons();
+}
+
+async function spinWheel() {
   if (state.spinning) return;
-  const sel  = document.getElementById('_upg_sel');
-  const invId = sel ? parseInt(sel.value) : state.upgradeInvId;
-  const item  = state.inventory.find(i => i.inv_id === invId);
-  if (!item) return;
-  const fromNft = NFTS[item.nft_id];
-  if (!fromNft?.upgTo) return;
-  if (state.balance < fromNft.upgCost) { toast('Недостаточно T Coins', 'error'); return; }
+  if (!state.upgradeFrom || !state.upgradeTo) {
+    toast('Выбери свой NFT и цель!', 'error');
+    return;
+  }
+  const fromNft = NFTS[state.upgradeFromId];
+  const toNft   = NFTS[state.upgradeTo];
+  const cost    = state.upgradeCost || 0;
+
+  if (state.balance < cost) {
+    toast(`Недостаточно TC! Нужно ${cost}`, 'error');
+    return;
+  }
 
   state.spinning = true;
-  const btn = document.getElementById('_upg_btn');
+  const btn = document.getElementById('upg-spin-btn');
   if (btn) btn.disabled = true;
+  const resultEl = document.getElementById('wheel-result');
+  if (resultEl) { resultEl.textContent = ''; resultEl.className = 'wheel-result'; }
 
+  // Запрос к серверу
   let won = false;
   try {
-    const res = await apiPost('/upgrade', { inv_id: invId });
+    const res = await apiPost('/upgrade', {
+      inv_id:  state.upgradeFrom,
+      to_id:   state.upgradeTo,
+      chance:  state.upgradeChance || 50,
+      cost:    cost,
+    });
     won = res.ok === true;
     if (res.balance !== undefined) state.balance = res.balance;
     if (res.inventory) state.inventory = res.inventory;
   } catch {
-    won = Math.random() < 0.25;
-    state.balance -= fromNft.upgCost;
-    state.inventory = state.inventory.filter(i => i.inv_id !== invId);
-    if (won) state.inventory.push({ inv_id: Date.now(), nft_id: fromNft.upgTo });
+    won = Math.random() * 100 < (state.upgradeChance || 50);
+    state.balance -= cost;
+    state.inventory = state.inventory.filter(i => i.inv_id !== state.upgradeFrom);
+    if (won) state.inventory.push({ inv_id: Date.now(), nft_id: state.upgradeTo });
   }
 
-  const track  = document.getElementById('_spin_track');
-  const result = document.getElementById('_spin_res');
-  const segs   = track?._segs || [];
-  const segW   = 60;
-  const total  = segs.length * segW;
-  const cw     = document.getElementById('screen-upgrade')?.offsetWidth / 2 || 180;
-  const pool   = won ? segs.reduce((a,s,i)=>s==='win'?[...a,i]:a,[])
-                     : segs.reduce((a,s,i)=>s==='lose'?[...a,i]:a,[]);
-  const stopIdx = pool[Math.floor(Math.random()*pool.length)] ?? 20;
-  const finalX  = -(stopIdx * segW - cw + segW / 2);
+  // Анимация колеса
+  const chance     = (state.upgradeChance || 50) / 100;
+  const totalRots  = (5 + Math.random() * 3) * Math.PI * 2;
+  const loseZone   = (1 - chance) * Math.PI * 2;
+  const winZone    = chance       * Math.PI * 2;
+  // Стоп: в зоне победы или проигрыша
+  const stopInWin  = Math.random() * winZone  + loseZone + 0.1;
+  const stopInLose = Math.random() * (loseZone - 0.2) + 0.1;
+  const stopAngle  = won ? stopInWin : stopInLose;
+  const finalAngle = totalRots + stopAngle;
 
-  const t0 = performance.now();
-  const dur = 2800;
-  function animate(now) {
+  const t0  = performance.now();
+  const dur = 3500;
+
+  function anim(now) {
     const p = Math.min((now - t0) / dur, 1);
-    const e = 1 - Math.pow(1 - p, 3);
-    const x = -(e * (3 * total + Math.abs(finalX))) + (finalX + 3 * total);
-    track.style.transform = `translateX(${x % (-total)}px)`;
-    if (p < 1) { requestAnimationFrame(animate); return; }
-    track.style.transform = `translateX(${finalX}px)`;
-    if (won) {
-      result.textContent = `Успех! Получен ${NFTS[fromNft.upgTo].name}!`;
-      result.className = 'spin-result win';
-      toast('Апгрейд успешен!', 'success');
-    } else {
-      result.textContent = 'Неудача... NFT потерян';
-      result.className = 'spin-result lose';
-      toast('Апгрейд не удался', 'error');
-    }
+    const e = 1 - Math.pow(1 - p, 4); // ease-out quart
+    drawWheel(e * finalAngle);
+    if (p < 1) { requestAnimationFrame(anim); return; }
+
+    // Финал
     state.spinning = false;
+    if (btn) btn.disabled = false;
+    if (resultEl) {
+      if (won) {
+        resultEl.textContent = `Победа! Получен ${toNft.name}!`;
+        resultEl.className = 'wheel-result win';
+        toast('Апгрейд успешен!', 'success');
+      } else {
+        resultEl.textContent = 'Неудача... NFT потерян';
+        resultEl.className = 'wheel-result lose';
+        toast('Не повезло', 'error');
+      }
+    }
+    state.upgradeFrom   = null;
+    state.upgradeFromId = null;
+    state.upgradeTo     = null;
+    state.upgradeCost   = 0;
     renderHome();
     renderInventory();
-    setTimeout(() => renderUpgrade(), 1800);
+    setTimeout(() => renderUpgrade(), 2000);
   }
-  requestAnimationFrame(animate);
+  requestAnimationFrame(anim);
 }
 
 // ── DEPOSIT ───────────────────────────────────────────
