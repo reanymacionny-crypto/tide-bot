@@ -154,7 +154,8 @@ async def create_app():
     app.router.add_post('/api/buy',     api_buy)
     app.router.add_post('/api/sell',    api_sell)
     app.router.add_post('/api/upgrade', api_upgrade)
-    app.router.add_static('/', WEBAPP_DIR, show_index=True, follow_symlinks=True)
+    app.router.add_static('/', WEBAPP_DIR, show_index=False, follow_symlinks=True, append_version=False)
+    app.router.add_get('/', lambda r: web.FileResponse(os.path.join(WEBAPP_DIR, 'index.html')))
     return app
 
 if __name__ == '__main__':
