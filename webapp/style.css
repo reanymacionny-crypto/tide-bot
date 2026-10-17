@@ -20,7 +20,7 @@
   --common:    #6b7280;
   --rare:      #3b82f6;
   --epic:      #a855f7;
-  --legendary: ауммм#f5bd03;
+  --legendary: #f5bd03;
   --nav-h:     68px;
 }
 
@@ -1872,7 +1872,6 @@ html, body {
   justify-content: center;
   background: transparent;
 }
-
 /* Свечение сзади */
 .nft-photo-glow {
   position: absolute;
