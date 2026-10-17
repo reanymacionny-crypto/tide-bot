@@ -230,7 +230,8 @@ async def api_buy_stock(request):
         'inventory': [{'inv_id': i['id'], 'nft_id': i['nft_id']} for i in inv]
     })
 
-
+# ── /api/stock — получить сток ────────────────────────────────
+async def api_stock_get(request):
     stock = await get_stock()
     return web.json_response({'stock': stock})
 
