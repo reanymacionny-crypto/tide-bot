@@ -1845,3 +1845,18 @@ html, body {
 .case-content-right { text-align: right; flex-shrink: 0; }
 .case-content-chance { font-size: 16px; font-weight: 900; }
 .case-content-price  { font-size: 10px; color: var(--gold); font-weight: 700; margin-top: 2px; }
+
+/* ── NFT IMG WRAP (для jpg картинок с фоном) ──────────── */
+.nft-img-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.nft-img-wrap .nft-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

@@ -122,6 +122,14 @@ function closeModal() {
 
 // ── NFT HELPERS ───────────────────────────────────────
 function nftImgHtml(nft, cls = '') {
+  // Если img — jpg/png файл (не data:), показываем на фоне imgBg
+  if (nft.img && !nft.img.startsWith('data:')) {
+    const bg = nft.imgBg || '#000';
+    return `<div class="nft-img-wrap" style="background:${bg}">
+      <img src="${nft.img}" class="nft-img ${cls}" loading="lazy"
+        onerror="this.parentNode.style.background='var(--bg3)'">
+    </div>`;
+  }
   if (nft.img) return `<img src="${nft.img}" class="nft-img ${cls}" loading="lazy">`;
   return `<div class="nft-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="3"/></svg></div>`;
 }
