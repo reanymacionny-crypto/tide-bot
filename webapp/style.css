@@ -1758,6 +1758,7 @@ html, body {
   align-items: center;
   justify-content: center;
   position: relative;
+  isolation: isolate;
 }
 /* свечение внутри картинки снизу */
 .case-grid-img-wrap::after {

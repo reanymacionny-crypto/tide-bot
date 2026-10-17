@@ -328,9 +328,21 @@ CASE_ITEMS = {
         {'nft_id': 42, 'chance': 0.1,  'price': 65000  },
         {'nft_id': 52, 'chance': 0.1,  'price': 120000 },
         {'nft_id': 54, 'chance': 0.05, 'price': 2500000},
+    ],
+    'nightmare': [
+        {'nft_id': 7,  'chance': 30,   'price': 150    },
+        {'nft_id': 19, 'chance': 28,   'price': 250    },
+        {'nft_id': 34, 'chance': 22,   'price': 120    },
+        {'nft_id': 8,  'chance': 10,   'price': 2800   },
+        {'nft_id': 20, 'chance': 8,    'price': 4200   },
+        {'nft_id': 35, 'chance': 6,    'price': 2200   },
+        {'nft_id': 57, 'chance': 1.0,  'price': 75000  },
+        {'nft_id': 9,  'chance': 0.5,  'price': 55000  },
+        {'nft_id': 52, 'chance': 0.1,  'price': 120000 },
+        {'nft_id': 56, 'chance': 0.05, 'price': 2000000},
     ]
 }
-CASE_PRICES = {'poison': 500, 'hellfire': 1200, 'dota2': 2500}
+CASE_PRICES = {'poison': 500, 'hellfire': 1200, 'dota2': 2500, 'nightmare': 3500}
 
 async def api_open_case(request):
     uid = get_user_id(request)
