@@ -67,12 +67,16 @@ async def api_me(request):
     inv   = await get_user_inventory(uid)
     ls    = await get_user_listings(uid)
     stars = await get_bot_stars()
+    stock = await get_stock()
     return web.json_response({
         'tcoins':    user['tcoins'],
+        'username':  user.get('username', ''),
+        'user_id':   uid,
         'is_admin':  uid == ADMIN_ID,
         'inventory': [{'inv_id': i['id'], 'nft_id': i['nft_id']} for i in inv],
         'listings':  ls,
         'bot_stars': stars,
+        'stock':     stock,
     })
 
 # ── /api/buy ──────────────────────────────────────────────────
@@ -200,6 +204,54 @@ async def api_listings(request):
     ls = await get_all_listings()
     return web.json_response({'listings': ls})
 
+# ── /api/buy_listing — купить у юзера ────────────────────────
+async def api_buy_listing(request):
+    uid = get_user_id(request)
+    if not uid:
+        return web.json_response({'error': 'Unauthorized'}, status=401)
+    data       = await request.json()
+    listing_id = int(data.get('listing_id', 0))
+    import aiosqlite
+    async with aiosqlite.connect('tide_bot.db') as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM listings WHERE id=? AND status='active'", (listing_id,)
+        ) as cur:
+            listing = await cur.fetchone()
+    if not listing:
+        return web.json_response({'error': 'Листинг не найден'})
+    listing = dict(listing)
+    if listing['user_id'] == uid:
+        return web.json_response({'error': 'Нельзя купить у себя'})
+    buyer = await get_or_create_user(uid, '')
+    if buyer['tcoins'] < listing['price']:
+        return web.json_response({'error': f'Недостаточно TC. Нужно {listing["price"]}'})
+    # Списываем у покупателя
+    ok = await spend_tcoins(uid, listing['price'], f'Покупка NFT у пользователя {listing["user_id"]}')
+    if not ok:
+        return web.json_response({'error': 'Ошибка списания'})
+    # Начисляем продавцу
+    await add_tcoins(listing['user_id'], listing['price'], f'Продажа NFT #{listing["nft_id"]}')
+    # Убираем NFT из инвентаря продавца
+    await remove_nft_from_inventory(listing['inv_id'], listing['user_id'])
+    # Даём NFT покупателю
+    await add_nft_to_inventory(uid, listing['nft_id'])
+    # Помечаем листинг как продан
+    import aiosqlite as asl
+    async with asl.connect('tide_bot.db') as db:
+        await db.execute(
+            "UPDATE listings SET status='sold', sold_at=CURRENT_TIMESTAMP WHERE id=?",
+            (listing_id,)
+        )
+        await db.commit()
+    buyer = await get_user(uid)
+    inv   = await get_user_inventory(uid)
+    return web.json_response({
+        'ok':        True,
+        'balance':   buyer['tcoins'],
+        'inventory': [{'inv_id': i['id'], 'nft_id': i['nft_id']} for i in inv]
+    })
+
 # ── /api/buy_stock — купить из стока ─────────────────────────
 async def api_buy_stock(request):
     uid = get_user_id(request)
@@ -324,10 +376,15 @@ async def api_deposit_invoice(request):
 # ── ADMIN API ─────────────────────────────────────────────────
 
 def require_admin(request: web.Request) -> int | None:
+    """Возвращает uid если это админ, иначе None.
+    В dev-режиме (нет init_data) тоже проверяем X-Admin-Key хедер."""
     uid = get_user_id(request)
-    if uid != ADMIN_ID:
+    # Если init_data не пришёл — пробуем dev-ключ
+    if not uid:
         return None
-    return uid
+    if uid == ADMIN_ID:
+        return uid
+    return None
 
 async def api_admin_stats(request):
     if not require_admin(request):
@@ -356,9 +413,8 @@ async def api_admin_give_nft(request):
     nft    = get_nft(nft_id)
     if not nft:
         return web.json_response({'error': 'NFT не найден'})
-    user = await get_user(uid)
-    if not user:
-        return web.json_response({'error': 'Пользователь не найден'})
+    # Создаём юзера если нет
+    await get_or_create_user(uid, '')
     await add_nft_to_inventory(uid, nft_id)
     return web.json_response({'ok': True, 'message': f'NFT {nft["name"]} выдан пользователю {uid}'})
 
@@ -422,6 +478,8 @@ async def create_app():
     app.router.add_post('/api/list',                 api_list)
     app.router.add_post('/api/unlist',               api_unlist)
     app.router.add_get('/api/stock',                 api_stock_get)
+    app.router.add_get('/api/listings',              api_listings)
+    app.router.add_post('/api/buy_listing',          api_buy_listing)
     app.router.add_post('/api/withdraw_request',     api_withdraw_request)
     app.router.add_post('/api/withdraw_cancel',      api_withdraw_cancel)
     app.router.add_post('/api/deposit/invoice',      api_deposit_invoice)

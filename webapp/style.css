@@ -1458,3 +1458,26 @@ html, body {
 /* Admin nav кнопка */
 .nav-admin { color: var(--gold) !important; }
 .nav-admin.active::before { background: var(--gold) !important; }
+
+/* ── SELLER BADGES ON CARDS ─────────────────────────── */
+.nft-seller-badge {
+  position: absolute;
+  top: 8px; left: 8px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  z-index: 3;
+  backdrop-filter: blur(8px);
+}
+.stock-badge {
+  background: rgba(251,191,36,.18);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.35);
+}
+.user-badge {
+  background: rgba(99,102,241,.18);
+  color: #818cf8;
+  border: 1px solid rgba(99,102,241,.35);
+}

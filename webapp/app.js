@@ -49,29 +49,27 @@ async function apiPost(path, body) {
 async function loadUser() {
   try {
     const data = await apiGet('/me');
-    state.balance   = data.tcoins    || 0;
-    state.inventory = data.inventory || [];
-    state.listings  = data.listings  || [];
-    state.isAdmin   = data.is_admin  || false;
+    state.balance    = data.tcoins    || 0;
+    state.inventory  = data.inventory || [];
+    state.listings   = data.listings  || [];
+    state.isAdmin    = data.is_admin  || false;
+    state.myUsername = data.username  || '';
+    state.stock      = data.stock     || [];
   } catch {
-    state.balance   = 0;
-    state.inventory = [];
-    state.listings  = [];
-    state.isAdmin   = false;
+    state.balance = 0; state.inventory = []; state.listings = [];
+    state.isAdmin = false; state.stock = [];
   }
-  // Показать кнопку Admin если овнер
+
+  // Загружаем публичные листинги других людей
+  try {
+    const pl = await apiGet('/listings');
+    state.publicListings = pl.listings || [];
+  } catch { state.publicListings = []; }
+
   const adminBtn = document.getElementById('nav-admin-btn');
   if (adminBtn) adminBtn.style.display = state.isAdmin ? 'flex' : 'none';
 
-  // Загрузить сток
-  try {
-    const s = await apiGet('/stock');
-    state.stock = s.stock || [];
-  } catch { state.stock = []; }
-
-  renderHome();
-  renderInventory();
-  renderUpgrade();
+  renderHome(); renderInventory(); renderUpgrade();
 }
 
 // ── SCREEN ────────────────────────────────────────────
@@ -267,12 +265,13 @@ function openStockModal(stockId) {
   if (!s) return;
   const n = NFTS[s.nft_id];
   if (!n) return;
+  const sellerName = s.seller_name === 'STOCK' ? 'STOCK' : s.seller_name;
   openModal(`
     <div class="modal-nft-wrap"><img src="${n.img}" class="modal-nft-img"></div>
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
     <div class="modal-desc">${n.desc}</div>
-    <div class="seller-badge">📦 Продавец: <b>${s.seller_name}</b></div>
+    <div class="seller-badge">📦 Продавец: <b>${sellerName}</b></div>
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val">${s.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
       <div class="stat-box"><div class="stat-val">${n.sell} ⭐</div><div class="stat-lbl">Stars вывод</div></div>
@@ -308,20 +307,28 @@ async function buyStockNft(stockId, nftId, price) {
 // ── MARKET ────────────────────────────────────────────
 function renderMarket() {
   const el = document.getElementById('screen-market');
-  const filters = ['All','Common','Rare','Epic','Legendary'];
+  const filters = ['All','Common','Rare','Legendary'];
   const q = (state.marketSearch || '').toLowerCase();
 
-  // Объединяем NFTS и сток
   const allItems = [];
-  // Сначала сток
+
+  // 1. Сток от бота — STOCK badge
   state.stock.forEach(s => {
-    const n = NFTS[s.nft_id];
-    if (!n) return;
+    const n = NFTS[s.nft_id]; if (!n) return;
     const rarityOk = state.marketFilter === 'All' || n.rarity === state.marketFilter;
     const searchOk = !q || n.name.toLowerCase().includes(q);
     if (rarityOk && searchOk) allItems.push({ type:'stock', s, n });
   });
-  // Потом обычные NFT
+
+  // 2. Публичные листинги от юзеров — с пометкой продавца
+  (state.publicListings || []).forEach(l => {
+    const n = NFTS[l.nft_id]; if (!n) return;
+    const rarityOk = state.marketFilter === 'All' || n.rarity === state.marketFilter;
+    const searchOk = !q || n.name.toLowerCase().includes(q);
+    if (rarityOk && searchOk) allItems.push({ type:'user_listing', l, n });
+  });
+
+  // 3. Обычный каталог
   Object.entries(NFTS).forEach(([id, n]) => {
     const rarityOk = state.marketFilter === 'All' || n.rarity === state.marketFilter;
     const searchOk = !q || n.name.toLowerCase().includes(q);
@@ -345,11 +352,27 @@ function renderMarket() {
           return `
             <div class="nft-card rarity-${n.rarity}" onclick="openStockModal(${s.id})">
               <div class="nft-card-badge badge-${n.rarity}">${RSHORT[n.rarity]}</div>
+              <div class="nft-seller-badge stock-badge">📦 STOCK</div>
               ${nftImgHtml(n)}
               <div class="nft-body">
                 <div class="nft-name">${n.name}</div>
                 <div class="nft-seller">📦 ${s.seller_name}</div>
                 <div class="nft-price">${s.price.toLocaleString()} TC</div>
+              </div>
+            </div>`;
+        }
+        if (item.type === 'user_listing') {
+          const { l, n } = item;
+          const seller = l.username ? '@' + l.username : 'ID:' + l.user_id;
+          return `
+            <div class="nft-card rarity-${n.rarity}" onclick="openUserListingModal(${l.id})">
+              <div class="nft-card-badge badge-${n.rarity}">${RSHORT[n.rarity]}</div>
+              <div class="nft-seller-badge user-badge">👤 ${seller}</div>
+              ${nftImgHtml(n)}
+              <div class="nft-body">
+                <div class="nft-name">${n.name}</div>
+                <div class="nft-seller">👤 ${seller}</div>
+                <div class="nft-price">${l.price.toLocaleString()} TC</div>
               </div>
             </div>`;
         }
@@ -362,6 +385,46 @@ function renderMarket() {
 function setFilter(f) { state.marketFilter = f; renderMarket(); }
 function onMarketSearch(v) { state.marketSearch = v; renderMarket(); }
 
+// Модалка для листинга от юзера
+function openUserListingModal(listingId) {
+  const l = (state.publicListings || []).find(x => x.id === listingId);
+  if (!l) return;
+  const n = NFTS[l.nft_id]; if (!n) return;
+  const seller = l.username ? '@' + l.username : 'ID:' + l.user_id;
+  openModal(`
+    <div class="modal-nft-wrap"><img src="${n.img}" class="modal-nft-img"></div>
+    <div class="modal-title">${n.name}</div>
+    <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
+    <div class="modal-desc">${n.desc}</div>
+    <div class="seller-badge">👤 Продавец: <b>${seller}</b></div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-val">${l.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
+      <div class="stat-box"><div class="stat-val">${n.sell} ⭐</div><div class="stat-lbl">Stars вывод</div></div>
+    </div>
+    <button class="btn-primary" onclick="buyUserListing(${listingId}, ${l.nft_id}, ${l.price})">Купить за ${l.price.toLocaleString()} TC</button>
+    <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
+  `);
+}
+
+async function buyUserListing(listingId, nftId, price) {
+  if (state.balance < price) { toast('Недостаточно T Coins', 'error'); return; }
+  try {
+    const res = await apiPost('/buy_listing', { listing_id: listingId });
+    if (res.ok) {
+      state.balance = res.balance; state.inventory = res.inventory;
+      state.publicListings = (state.publicListings||[]).filter(l => l.id !== listingId);
+      renderHome(); renderInventory(); closeModal();
+      toast(`${NFTS[nftId]?.name} куплен!`, 'success');
+    } else toast(res.error || 'Ошибка', 'error');
+  } catch {
+    state.balance -= price;
+    state.inventory.push({ inv_id: Date.now(), nft_id: nftId });
+    state.publicListings = (state.publicListings||[]).filter(l => l.id !== listingId);
+    renderHome(); renderInventory(); closeModal();
+    toast(`${NFTS[nftId]?.name} куплен!`, 'success');
+  }
+}
+
 // ── NFT MODAL ─────────────────────────────────────────
 function openNftModal(id) {
   const n = NFTS[id];
@@ -370,6 +433,7 @@ function openNftModal(id) {
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
     <div class="modal-desc">${n.desc}</div>
+    <div class="seller-badge">🏪 Продавец: <b>TIDE BOT</b></div>
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val">${n.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
       <div class="stat-box"><div class="stat-val">${n.sell} ⭐</div><div class="stat-lbl">Stars вывод</div></div>
