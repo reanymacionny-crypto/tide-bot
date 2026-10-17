@@ -122,16 +122,40 @@ function closeModal() {
 
 // ── NFT HELPERS ───────────────────────────────────────
 function nftImgHtml(nft, cls = '') {
-  // Если img — jpg/png файл (не data:), показываем на фоне imgBg
-  if (nft.img && !nft.img.startsWith('data:')) {
-    const bg = nft.imgBg || '#000';
-    return `<div class="nft-img-wrap" style="background:${bg}">
-      <img src="${nft.img}" class="nft-img ${cls}" loading="lazy"
-        onerror="this.parentNode.style.background='var(--bg3)'">
+  // Фото-NFT с аурой (plush и тд)
+  if (nft.isPhoto) {
+    const aura = nft.auraColor || '#fbbf24';
+    const bg1  = nft.bg1 || '#0a0a14';
+    const bg2  = nft.bg2 || '#04040a';
+    return `<div class="nft-photo-wrap ${cls}" style="--aura:${aura};background:radial-gradient(ellipse at 50% 40%,${bg1},${bg2})">
+      <div class="nft-photo-glow" style="background:${aura}"></div>
+      <div class="nft-photo-particles">
+        ${[...Array(8)].map((_,i) => `<div class="nft-particle" style="--i:${i};--c:${aura}"></div>`).join('')}
+      </div>
+      <img src="${nft.photoSrc}" class="nft-photo-img" loading="lazy"
+        onerror="this.style.opacity='.3'">
     </div>`;
   }
+  // Обычный SVG
   if (nft.img) return `<img src="${nft.img}" class="nft-img ${cls}" loading="lazy">`;
   return `<div class="nft-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="3"/></svg></div>`;
+}
+
+// Для модалки — квадратная обёртка с аурой
+function nftModalImgHtml(nft) {
+  if (nft.isPhoto) {
+    const aura = nft.auraColor || '#fbbf24';
+    const bg1  = nft.bg1 || '#0a0a14';
+    const bg2  = nft.bg2 || '#04040a';
+    return `<div class="nft-photo-wrap modal-photo-wrap" style="--aura:${aura};background:radial-gradient(ellipse at 50% 40%,${bg1},${bg2})">
+      <div class="nft-photo-glow" style="background:${aura}"></div>
+      <div class="nft-photo-particles">
+        ${[...Array(8)].map((_,i) => `<div class="nft-particle" style="--i:${i};--c:${aura}"></div>`).join('')}
+      </div>
+      <img src="${nft.photoSrc}" class="nft-photo-img" loading="lazy">
+    </div>`;
+  }
+  return `<div class="modal-nft-wrap"><img src="${nft.img||''}" class="modal-nft-img" onerror="this.style.opacity='.3'"></div>`;
 }
 
 const RSHORT = { Common:'C', Rare:'R', Epic:'E', Legendary:'L' };
@@ -438,7 +462,7 @@ async function buyUserListing(listingId, nftId, price) {
 function openNftModal(id) {
   const n = NFTS[id];
   openModal(`
-    <div class="modal-nft-wrap"><img src="${n.img}" class="modal-nft-img" onerror="this.style.opacity='.3'"></div>
+    ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
     <div class="modal-desc">${n.desc}</div>
@@ -506,14 +530,9 @@ function renderInventory() {
 function openInvModal(invId, nftId) {
   const n = NFTS[nftId];
   const isPending = state.pendingWithdraws.includes(invId);
-
   if (isPending) {
-    // NFT на выводе — показываем статус
     openModal(`
-      <div class="modal-nft-wrap">
-        <img src="${n.img}" class="modal-nft-img" onerror="this.style.opacity='.3'">
-        <div class="withdraw-overlay">⏳</div>
-      </div>
+      ${nftModalImgHtml(n)}
       <div class="modal-title">${n.name}</div>
       <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
       <div class="withdraw-status-badge">
@@ -527,14 +546,13 @@ function openInvModal(invId, nftId) {
         <div class="stat-box"><div class="stat-val">${n.sell} ⭐</div><div class="stat-lbl">К получению</div></div>
         <div class="stat-box"><div class="stat-val" style="color:var(--text-dim);font-size:14px">На выводе</div><div class="stat-lbl">Статус</div></div>
       </div>
-      <button class="btn-secondary" onclick="cancelWithdraw(${invId})">❌ Отменить вывод</button>
+      <button class="btn-secondary" onclick="cancelWithdraw(${invId})">Отменить вывод</button>
       <button class="btn-secondary" style="margin-top:8px" onclick="closeModal()">Закрыть</button>
     `);
     return;
   }
-
   openModal(`
-    <div class="modal-nft-wrap"><img src="${n.img}" class="modal-nft-img" onerror="this.style.opacity='.3'"></div>
+    ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
     <div class="modal-desc">${n.desc}</div>
@@ -542,9 +560,9 @@ function openInvModal(invId, nftId) {
       <div class="stat-box"><div class="stat-val">${n.sell} ⭐</div><div class="stat-lbl">Stars вывод</div></div>
       <div class="stat-box"><div class="stat-val">${n.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
     </div>
-    <button class="btn-primary" onclick="closeModal();showScreen('list')">📤 Выставить на продажу</button>
-    <button class="btn-primary" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)" onclick="goUpgrade(${invId})">⚡ Апгрейд</button>
-    <button class="btn-danger" onclick="requestWithdraw(${invId},${nftId})">⭐ Вывести ${n.sell} Stars</button>
+    <button class="btn-primary" onclick="closeModal();showScreen('list')">Выставить на продажу</button>
+    <button class="btn-primary" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)" onclick="goUpgrade(${invId})">Апгрейд</button>
+    <button class="btn-danger" onclick="requestWithdraw(${invId},${nftId})">Вывести ${n.sell} Stars</button>
     <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
   `);
 }
@@ -1494,18 +1512,61 @@ const CASES = {
     })(),
     items: [
       // Common — от самых дешёвых к дорогим, шанс убывает
-      { nft_id: 37, chance: 32,  label: 'Berry Box',      rarity: 'Common',    price: 100   },
-      { nft_id: 7,  chance: 28,  label: 'Eternal Rose',   rarity: 'Common',    price: 150   },
-      { nft_id: 19, chance: 22,  label: 'Love Candle',    rarity: 'Common',    price: 250   },
+      { nft_id: 37, chance: 32,  label: 'Berry Box',      rarity: 'Common',    price: 100    },
+      { nft_id: 7,  chance: 28,  label: 'Eternal Rose',   rarity: 'Common',    price: 150    },
+      { nft_id: 19, chance: 22,  label: 'Love Candle',    rarity: 'Common',    price: 250    },
       // Rare
-      { nft_id: 38, chance: 10,  label: 'Berry Box',      rarity: 'Rare',      price: 1700  },
-      { nft_id: 35, chance: 9,   label: 'Spiced Wine',    rarity: 'Rare',      price: 2200  },
-      { nft_id: 8,  chance: 7,   label: 'Eternal Rose',   rarity: 'Rare',      price: 2800  },
-      { nft_id: 20, chance: 5,   label: 'Love Candle',    rarity: 'Rare',      price: 4200  },
-      // Legendary
-      { nft_id: 9,  chance: 2.5, label: 'Eternal Rose',   rarity: 'Legendary', price: 55000 },
-      { nft_id: 21, chance: 2,   label: 'Love Candle',    rarity: 'Legendary', price: 78000 },
-      { nft_id: 52, chance: 0.5, label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000},
+      { nft_id: 38, chance: 10,  label: 'Berry Box',      rarity: 'Rare',      price: 1700   },
+      { nft_id: 35, chance: 9,   label: 'Spiced Wine',    rarity: 'Rare',      price: 2200   },
+      { nft_id: 8,  chance: 7,   label: 'Eternal Rose',   rarity: 'Rare',      price: 2800   },
+      { nft_id: 20, chance: 5,   label: 'Love Candle',    rarity: 'Rare',      price: 4200   },
+      // Legendary — шанс 0.1%
+      { nft_id: 9,  chance: 0.1, label: 'Eternal Rose',   rarity: 'Legendary', price: 55000  },
+      { nft_id: 21, chance: 0.1, label: 'Love Candle',    rarity: 'Legendary', price: 78000  },
+      { nft_id: 52, chance: 0.1, label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000 },
+    ]
+  },
+
+  dota2: {
+    id: 'dota2',
+    name: 'Dota 2 Case',
+    price: 2500,
+    color: '#c084fc',
+    img: 'dota2_case.jpg',
+    imgFallback: (function() {
+      var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
+        + '<defs>'
+        + '<radialGradient id="dbg" cx="50%" cy="40%" r="70%"><stop offset="0%" stop-color="#120020"/><stop offset="100%" stop-color="#05000e"/></radialGradient>'
+        + '<filter id="dgl"><feGaussianBlur stdDeviation="6"/></filter>'
+        + '</defs>'
+        + '<rect width="200" height="200" rx="22" fill="url(#dbg)"/>'
+        + '<rect x="0" y="0" width="6" height="200" fill="#c084fc" opacity="0.7"/>'
+        + '<rect x="194" y="0" width="6" height="200" fill="#c084fc" opacity="0.7"/>'
+        + '<rect x="0" y="0" width="200" height="6" fill="#c084fc" opacity="0.7"/>'
+        + '<rect x="0" y="194" width="200" height="6" fill="#c084fc" opacity="0.7"/>'
+        + '<circle cx="100" cy="95" r="58" fill="#c084fc" opacity="0.08" filter="url(#dgl)"/>'
+        + '<text x="100" y="90" font-size="68" text-anchor="middle" dominant-baseline="middle">⚡</text>'
+        + '<text x="100" y="152" font-size="18" font-weight="900" text-anchor="middle" fill="#c084fc" font-family="sans-serif" letter-spacing="2">DOTA 2</text>'
+        + '<text x="100" y="171" font-size="11" text-anchor="middle" fill="#a855f7" font-family="sans-serif" letter-spacing="2" opacity="0.7">CASE</text>'
+        + '</svg>';
+      return 'data:image/svg+xml,' + encodeURIComponent(s);
+    })(),
+    items: [
+      // Common
+      { nft_id: 1,  chance: 28,   label: 'Evil Eye',       rarity: 'Common',    price: 250    },
+      { nft_id: 40, chance: 25,   label: 'Cookie Heart',   rarity: 'Common',    price: 200    },
+      { nft_id: 22, chance: 20,   label: 'Top Hat',        rarity: 'Common',    price: 180    },
+      // Rare
+      { nft_id: 2,  chance: 12,   label: 'Evil Eye',       rarity: 'Rare',      price: 4500   },
+      { nft_id: 41, chance: 9,    label: 'Cookie Heart',   rarity: 'Rare',      price: 3400   },
+      { nft_id: 23, chance: 7,    label: 'Top Hat',        rarity: 'Rare',      price: 2600   },
+      { nft_id: 27, chance: 5,    label: 'Nesting Doll',   rarity: 'Rare',      price: 2900   },
+      // Legendary 0.1%
+      { nft_id: 3,  chance: 0.1,  label: 'Evil Eye',       rarity: 'Legendary', price: 85000  },
+      { nft_id: 42, chance: 0.1,  label: 'Cookie Heart',   rarity: 'Legendary', price: 65000  },
+      { nft_id: 52, chance: 0.1,  label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000 },
+      // Ультра-редкий 0.05%
+      { nft_id: 54, chance: 0.05, label: 'Plush Fiend',    rarity: 'Legendary', price: 2500000},
     ]
   }
 };

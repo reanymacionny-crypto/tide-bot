@@ -305,19 +305,32 @@ CASE_ITEMS = {
         {'nft_id': 45, 'chance': 3.5, 'price': 32000 },
     ],
     'hellfire': [
-        {'nft_id': 7,  'chance': 30,  'price': 150   },
-        {'nft_id': 19, 'chance': 28,  'price': 250   },
-        {'nft_id': 37, 'chance': 25,  'price': 100   },
-        {'nft_id': 20, 'chance': 14,  'price': 4200  },
-        {'nft_id': 35, 'chance': 12,  'price': 2200  },
-        {'nft_id': 38, 'chance': 10,  'price': 1700  },
-        {'nft_id': 8,  'chance': 8,   'price': 2800  },
-        {'nft_id': 21, 'chance': 3,   'price': 78000 },
-        {'nft_id': 9,  'chance': 2.5, 'price': 55000 },
-        {'nft_id': 52, 'chance': 0.5, 'price': 120000},
+        {'nft_id': 37, 'chance': 32,  'price': 100    },
+        {'nft_id': 7,  'chance': 28,  'price': 150    },
+        {'nft_id': 19, 'chance': 22,  'price': 250    },
+        {'nft_id': 38, 'chance': 10,  'price': 1700   },
+        {'nft_id': 35, 'chance': 9,   'price': 2200   },
+        {'nft_id': 8,  'chance': 7,   'price': 2800   },
+        {'nft_id': 20, 'chance': 5,   'price': 4200   },
+        {'nft_id': 9,  'chance': 0.1, 'price': 55000  },
+        {'nft_id': 21, 'chance': 0.1, 'price': 78000  },
+        {'nft_id': 52, 'chance': 0.1, 'price': 120000 },
+    ],
+    'dota2': [
+        {'nft_id': 1,  'chance': 28,   'price': 250    },
+        {'nft_id': 40, 'chance': 25,   'price': 200    },
+        {'nft_id': 22, 'chance': 20,   'price': 180    },
+        {'nft_id': 2,  'chance': 12,   'price': 4500   },
+        {'nft_id': 41, 'chance': 9,    'price': 3400   },
+        {'nft_id': 23, 'chance': 7,    'price': 2600   },
+        {'nft_id': 27, 'chance': 5,    'price': 2900   },
+        {'nft_id': 3,  'chance': 0.1,  'price': 85000  },
+        {'nft_id': 42, 'chance': 0.1,  'price': 65000  },
+        {'nft_id': 52, 'chance': 0.1,  'price': 120000 },
+        {'nft_id': 54, 'chance': 0.05, 'price': 2500000},
     ]
 }
-CASE_PRICES = {'poison': 500, 'hellfire': 1200}
+CASE_PRICES = {'poison': 500, 'hellfire': 1200, 'dota2': 2500}
 
 async def api_open_case(request):
     uid = get_user_id(request)
