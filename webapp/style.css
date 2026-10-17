@@ -1870,25 +1870,24 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
 }
-/* Свечение сзади */
+/* Свечение сзади — z-index:1, позади картинки */
 .nft-photo-glow {
   position: absolute;
   top: 20%; left: 10%;
   width: 80%; height: 60%;
   border-radius: 50%;
-  filter: blur(22px);
-  opacity: 0.35;
+  filter: blur(28px);
+  opacity: 0.5;
   z-index: 1;
   animation: aura-pulse 3s ease-in-out infinite;
 }
 @keyframes aura-pulse {
-  0%, 100% { opacity: 0.28; transform: scale(1); }
-  50%       { opacity: 0.45; transform: scale(1.08); }
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%       { opacity: 0.65; transform: scale(1.12); }
 }
 
-/* Частицы — звёздочки вокруг */
+/* астицы — z-index:2 */
 .nft-photo-particles {
   position: absolute;
   inset: 0;
@@ -1904,7 +1903,6 @@ html, body {
   animation: particle-float calc(2s + var(--i) * 0.4s) ease-in-out infinite;
   animation-delay: calc(var(--i) * 0.35s);
 }
-/* Расставляем частицы по кругу */
 .nft-particle:nth-child(1)  { top: 10%; left: 15%; }
 .nft-particle:nth-child(2)  { top: 5%;  left: 55%; }
 .nft-particle:nth-child(3)  { top: 15%; left: 80%; }
@@ -1914,13 +1912,13 @@ html, body {
 .nft-particle:nth-child(7)  { top: 70%; left: 8%;  }
 .nft-particle:nth-child(8)  { top: 35%; left: 5%;  }
 @keyframes particle-float {
-  0%   { opacity: 0;   transform: translateY(0)  scale(1);   }
-  30%  { opacity: 0.9; transform: translateY(-6px) scale(1.3); }
+  0%   { opacity: 0;   transform: translateY(0)    scale(1);   }
+  30%  { opacity: 0.9; transform: translateY(-6px)  scale(1.3); }
   70%  { opacity: 0.6; transform: translateY(-12px) scale(0.8); }
   100% { opacity: 0;   transform: translateY(-18px) scale(0.5); }
 }
 
-/* Сама картинка */
+/* артинка — z-index:3 поверх glow; mix-blend-mode:lighten убирает чёрный фон PNG */
 .nft-photo-img {
   position: relative;
   z-index: 3;
@@ -1928,10 +1926,10 @@ html, body {
   height: 100%;
   object-fit: contain;
   mix-blend-mode: lighten;
-  filter: drop-shadow(0 0 14px var(--aura, #fff));
+  filter: drop-shadow(0 0 10px var(--aura, #fff));
 }
 
-/* Кольцо свечения по краю */
+/* ольцо по краю — z-index:4 */
 .nft-photo-wrap::after {
   content: '';
   position: absolute;
@@ -1942,7 +1940,6 @@ html, body {
   pointer-events: none;
 }
 
-/* Фото-NFT в модалке — квадрат 140px */
 .modal-photo-wrap {
   width: 140px !important;
   height: 140px !important;
