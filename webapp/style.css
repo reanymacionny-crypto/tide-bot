@@ -1671,3 +1671,177 @@ html, body {
     width: 100%;
   }
 }
+
+/* ── CASES v2 — два кейса ────────────────────────────── */
+.cases-row {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cases-row::-webkit-scrollbar { display: none; }
+
+.case-thumb {
+  flex-shrink: 0;
+  width: 130px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .15s, box-shadow .15s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.case-thumb:active { transform: scale(.96); }
+.case-thumb.active {
+  border-color: var(--case-color, var(--gold));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--case-color, var(--gold)) 20%, transparent);
+}
+.case-thumb-img   { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; margin-bottom: 6px; }
+.case-thumb-name  { font-size: 11px; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+.case-thumb-price { font-size: 12px; font-weight: 900; color: var(--case-color, var(--gold)); }
+
+/* Герой активного кейса */
+.case-hero {
+  margin: 0 16px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.case-hero-img  { width: 100px; height: 100px; border-radius: 14px; object-fit: cover; flex-shrink: 0; }
+.case-hero-info { flex: 1; min-width: 0; }
+.case-hero-name { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
+.case-hero-price{ font-size: 20px; font-weight: 900; color: var(--text); margin-bottom: 2px; }
+.case-hero-sub  { font-size: 11px; color: var(--text-dim); margin-bottom: 12px; }
+.case-open-btn  { padding: 11px 16px !important; font-size: 13px !important; margin-bottom: 0 !important; }
+
+/* ── CASES GRID (список кейсов) ──────────────────────── */
+.cases-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+.case-grid-card {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .12s, border-color .15s, box-shadow .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.case-grid-card:active {
+  transform: scale(.96);
+  border-color: var(--cc, var(--gold));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--cc, var(--gold)) 25%, transparent);
+}
+.case-grid-img-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--bg2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.case-grid-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.case-grid-name  { font-size: 12px; font-weight: 800; color: var(--text); padding: 8px 10px 2px; }
+.case-grid-price { font-size: 13px; font-weight: 900; padding: 0 10px 10px; }
+
+/* ── CASE DETAIL PAGE ────────────────────────────────── */
+.case-detail-header {
+  padding: 16px 16px 8px;
+}
+.case-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  color: var(--text-mid);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.case-detail-hero {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 16px;
+}
+.case-detail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.5));
+}
+.case-detail-glow {
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.25;
+  z-index: 1;
+}
+.case-detail-title {
+  font-size: 22px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.case-detail-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-mid);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+/* Список содержимого кейса */
+.case-contents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.case-content-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: 3px solid;
+  border-radius: 12px;
+  padding: 8px 12px 8px 10px;
+}
+.case-content-img {
+  width: 44px; height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.case-content-info { flex: 1; min-width: 0; }
+.case-content-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.case-content-rar  { font-size: 10px; font-weight: 600; margin-top: 2px; }
+.case-content-right { text-align: right; flex-shrink: 0; }
+.case-content-chance { font-size: 16px; font-weight: 900; }
+.case-content-price  { font-size: 10px; color: var(--gold); font-weight: 700; margin-top: 2px; }

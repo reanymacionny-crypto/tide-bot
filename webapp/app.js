@@ -1376,34 +1376,28 @@ const CASES = {
     id: 'poison',
     name: 'Poison Case',
     price: 500,
-    // SVG иконка кейса в нашем стиле
-    img: (function() {
+    color: '#22c55e',
+    img: 'poison_case.png',           // кладёшь файл в webapp/poison_case.png
+    imgFallback: (function() {
       var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
         + '<defs>'
-        + '<linearGradient id="cbg" x1="0%" y1="0%" x2="100%" y2="100%">'
-        + '<stop offset="0%" stop-color="#0a1a0a"/>'
-        + '<stop offset="100%" stop-color="#040e04"/>'
-        + '</linearGradient>'
-        + '<filter id="cglow"><feGaussianBlur stdDeviation="4"/></filter>'
+        + '<radialGradient id="cbg" cx="50%" cy="40%" r="70%"><stop offset="0%" stop-color="#0f2a0f"/><stop offset="100%" stop-color="#020a02"/></radialGradient>'
+        + '<filter id="cgl"><feGaussianBlur stdDeviation="6"/></filter>'
         + '</defs>'
-        + '<rect width="200" height="200" rx="20" fill="url(#cbg)"/>'
-        // Зелёные полосы по углам
-        + '<rect x="0" y="0" width="8" height="200" rx="4" fill="#22c55e" opacity="0.6"/>'
-        + '<rect x="192" y="0" width="8" height="200" rx="4" fill="#22c55e" opacity="0.6"/>'
-        + '<rect x="0" y="0" width="200" height="8" rx="4" fill="#22c55e" opacity="0.6"/>'
-        + '<rect x="0" y="192" width="200" height="8" rx="4" fill="#22c55e" opacity="0.6"/>'
-        // Свечение
-        + '<circle cx="100" cy="100" r="70" fill="#22c55e" opacity="0.06" filter="url(#cglow)"/>'
-        // Биогазардный символ
-        + '<text x="100" y="92" font-size="72" text-anchor="middle" dominant-baseline="middle">☣️</text>'
-        // Надпись
-        + '<text x="100" y="155" font-size="18" font-weight="bold" text-anchor="middle" fill="#22c55e" font-family="sans-serif">POISON</text>'
-        + '<text x="100" y="173" font-size="12" text-anchor="middle" fill="#4ade80" font-family="sans-serif">CASE</text>'
+        + '<rect width="200" height="200" rx="22" fill="url(#cbg)"/>'
+        + '<rect x="0" y="0" width="6" height="200" fill="#22c55e" opacity="0.7"/>'
+        + '<rect x="194" y="0" width="6" height="200" fill="#22c55e" opacity="0.7"/>'
+        + '<rect x="0" y="0" width="200" height="6" fill="#22c55e" opacity="0.7"/>'
+        + '<rect x="0" y="194" width="200" height="6" fill="#22c55e" opacity="0.7"/>'
+        + '<rect x="12" y="12" width="176" height="176" rx="14" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.25"/>'
+        + '<circle cx="100" cy="95" r="58" fill="#22c55e" opacity="0.07" filter="url(#cgl)"/>'
+        + '<text x="100" y="90" font-size="68" text-anchor="middle" dominant-baseline="middle">☣️</text>'
+        + '<text x="100" y="152" font-size="20" font-weight="900" text-anchor="middle" fill="#4ade80" font-family="sans-serif" letter-spacing="3">POISON</text>'
+        + '<text x="100" y="171" font-size="11" text-anchor="middle" fill="#22c55e" font-family="sans-serif" letter-spacing="2" opacity="0.7">CASE</text>'
         + '</svg>';
       return 'data:image/svg+xml,' + encodeURIComponent(s);
     })(),
     items: [
-      // { nft_id, chance(%), display_chance }
       { nft_id: 1,  chance: 35,  label: 'Evil Eye',       rarity: 'Common',    price: 250   },
       { nft_id: 13, chance: 32,  label: 'Magic Mushroom', rarity: 'Common',    price: 220   },
       { nft_id: 4,  chance: 34,  label: 'Voodoo Doll',    rarity: 'Common',    price: 200   },
@@ -1413,40 +1407,133 @@ const CASES = {
       { nft_id: 50, chance: 2,   label: 'Santa Hat',      rarity: 'Legendary', price: 44000 },
       { nft_id: 45, chance: 3.5, label: 'Precious Peach', rarity: 'Legendary', price: 32000 },
     ]
+  },
+
+  hellfire: {
+    id: 'hellfire',
+    name: 'Hellfire Case',
+    price: 1200,
+    color: '#ef4444',
+    img: 'hellfire_case.png',         // кладёшь файл в webapp/hellfire_case.png
+    imgFallback: (function() {
+      var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
+        + '<defs>'
+        + '<radialGradient id="hbg" cx="50%" cy="40%" r="70%"><stop offset="0%" stop-color="#2a0606"/><stop offset="100%" stop-color="#0a0202"/></radialGradient>'
+        + '<filter id="hgl"><feGaussianBlur stdDeviation="6"/></filter>'
+        + '</defs>'
+        + '<rect width="200" height="200" rx="22" fill="url(#hbg)"/>'
+        + '<rect x="0" y="0" width="6" height="200" fill="#ef4444" opacity="0.7"/>'
+        + '<rect x="194" y="0" width="6" height="200" fill="#ef4444" opacity="0.7"/>'
+        + '<rect x="0" y="0" width="200" height="6" fill="#ef4444" opacity="0.7"/>'
+        + '<rect x="0" y="194" width="200" height="6" fill="#ef4444" opacity="0.7"/>'
+        + '<rect x="12" y="12" width="176" height="176" rx="14" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.3"/>'
+        // Диагональные трещины
+        + '<line x1="30" y1="20" x2="80" y2="100" stroke="#ef4444" stroke-width="1.5" opacity="0.2"/>'
+        + '<line x1="170" y1="20" x2="120" y2="100" stroke="#ef4444" stroke-width="1.5" opacity="0.2"/>'
+        + '<line x1="20" y1="160" x2="90" y2="120" stroke="#ef4444" stroke-width="1" opacity="0.15"/>'
+        + '<circle cx="100" cy="95" r="58" fill="#ef4444" opacity="0.08" filter="url(#hgl)"/>'
+        + '<text x="100" y="90" font-size="68" text-anchor="middle" dominant-baseline="middle">🔥</text>'
+        + '<text x="100" y="152" font-size="18" font-weight="900" text-anchor="middle" fill="#f87171" font-family="sans-serif" letter-spacing="2">HELLFIRE</text>'
+        + '<text x="100" y="171" font-size="11" text-anchor="middle" fill="#ef4444" font-family="sans-serif" letter-spacing="2" opacity="0.7">CASE</text>'
+        + '</svg>';
+      return 'data:image/svg+xml,' + encodeURIComponent(s);
+    })(),
+    items: [
+      // Common (дешёвые, высокий шанс)
+      { nft_id: 7,  chance: 30,  label: 'Eternal Rose',   rarity: 'Common',    price: 150   },
+      { nft_id: 19, chance: 28,  label: 'Love Candle',    rarity: 'Common',    price: 250   },
+      { nft_id: 37, chance: 25,  label: 'Berry Box',      rarity: 'Common',    price: 100   },
+      // Rare (средние)
+      { nft_id: 20, chance: 14,  label: 'Love Candle',    rarity: 'Rare',      price: 4200  },
+      { nft_id: 35, chance: 12,  label: 'Spiced Wine',    rarity: 'Rare',      price: 2200  },
+      { nft_id: 38, chance: 10,  label: 'Berry Box',      rarity: 'Rare',      price: 1700  },
+      { nft_id: 8,  chance: 8,   label: 'Eternal Rose',   rarity: 'Rare',      price: 2800  },
+      // Legendary (дорогие, редкие)
+      { nft_id: 21, chance: 3,   label: 'Love Candle',    rarity: 'Legendary', price: 78000 },
+      { nft_id: 9,  chance: 2.5, label: 'Eternal Rose',   rarity: 'Legendary', price: 55000 },
+      { nft_id: 52, chance: 0.5, label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000},
+    ]
   }
 };
 
+let activeCaseId = null; // null = показываем список
+
 function renderCases() {
   const el = document.getElementById('screen-cases');
-  const c  = CASES.poison;
+
+  if (activeCaseId) {
+    // ── Страница конкретного кейса ──
+    const c = CASES[activeCaseId];
+    el.innerHTML = `
+      <div class="case-detail-header">
+        <button class="case-back-btn" onclick="activeCaseId=null;renderCases()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Назад к кейсам
+        </button>
+      </div>
+
+      <div class="case-detail-hero">
+        <img src="${c.img}" class="case-detail-img" onerror="this.src='${c.imgFallback}'">
+        <div class="case-detail-glow" style="background:${c.color}"></div>
+      </div>
+
+      <div class="case-detail-title" style="color:${c.color}">${c.name}</div>
+      <div class="case-detail-price">${c.price.toLocaleString()} TC</div>
+
+      <div style="padding:0 16px;margin-bottom:16px">
+        <button class="btn-primary" onclick="openCaseModal('${c.id}')"
+          style="background:linear-gradient(135deg,${c.color}dd,${c.color}88);color:#000;font-size:15px">
+          Открыть за ${c.price.toLocaleString()} TC
+        </button>
+      </div>
+
+      <div style="padding:0 16px 8px">
+        <div class="section-label" style="padding:0 0 12px">Содержимое кейса</div>
+        <div class="case-contents-list">
+          ${[...c.items].sort((a,b) => b.chance - a.chance).map(item => {
+            const n = NFTS[item.nft_id];
+            const rarityColor = {Common:'#22c55e',Rare:'#3b82f6',Legendary:'#f59e0b'}[item.rarity]||'#fff';
+            return `
+              <div class="case-content-row" style="border-left-color:${rarityColor}">
+                <img src="${n ? n.img : ''}" class="case-content-img">
+                <div class="case-content-info">
+                  <div class="case-content-name">${item.label}</div>
+                  <div class="case-content-rar" style="color:${rarityColor}">${item.rarity}</div>
+                </div>
+                <div class="case-content-right">
+                  <div class="case-content-chance" style="color:${rarityColor}">${item.chance}%</div>
+                  <div class="case-content-price">${item.price.toLocaleString()} TC</div>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div style="height:20px"></div>
+    `;
+    return;
+  }
+
+  // ── Список всех кейсов ──
   el.innerHTML = `
     <div class="screen-header">Кейсы</div>
-    <div class="case-card" onclick="openCaseModal('poison')">
-      <img src="${c.img}" class="case-card-img">
-      <div class="case-card-body">
-        <div class="case-card-name">${c.name}</div>
-        <div class="case-card-price">${c.price.toLocaleString()} TC</div>
-        <div class="case-card-sub">Нажми чтобы открыть</div>
-      </div>
-    </div>
-
-    <div style="padding:0 16px 8px">
-      <div class="section-label" style="padding:0 0 12px">Содержимое кейса</div>
-      <div class="case-contents">
-        ${c.items.map(item => {
-          const n = NFTS[item.nft_id];
-          return `
-            <div class="case-item rarity-border-${item.rarity}">
-              <img src="${n ? n.img : ''}" class="case-item-img">
-              <div class="case-item-name">${item.label}</div>
-              <div class="case-item-chance" style="color:${item.rarity==='Legendary'?'var(--legendary)':item.rarity==='Rare'?'var(--rare)':'var(--green)'}">${item.chance}%</div>
-              <div class="case-item-price">${item.price.toLocaleString()} TC</div>
-            </div>`;
-        }).join('')}
-      </div>
+    <div class="cases-grid">
+      ${Object.values(CASES).map(c => `
+        <div class="case-grid-card" onclick="activeCaseId='${c.id}';renderCases()"
+          style="--cc:${c.color}">
+          <div class="case-grid-img-wrap">
+            <img src="${c.img}" class="case-grid-img" onerror="this.src='${c.imgFallback}'">
+          </div>
+          <div class="case-grid-name">${c.name}</div>
+          <div class="case-grid-price" style="color:${c.color}">${c.price.toLocaleString()} TC</div>
+        </div>`).join('')}
     </div>
     <div style="height:20px"></div>
   `;
+}
+
+function selectCase(id) {
+  activeCaseId = id;
+  renderCases();
 }
 
 function openCaseModal(caseId) {
