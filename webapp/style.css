@@ -1927,6 +1927,7 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  mix-blend-mode: lighten;
   filter: drop-shadow(0 0 14px var(--aura, #fff));
 }
 
