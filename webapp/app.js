@@ -1423,7 +1423,7 @@ const CASES = {
     name: 'Poison Case',
     price: 500,
     color: '#22c55e',
-    img: 'poison_case.png',           // кладёшь файл в webapp/poison_case.png
+    img: 'poison_case.jpg',           // кладёшь файл в webapp/poison_case.jpg
     imgFallback: (function() {
       var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
         + '<defs>'
@@ -1460,7 +1460,7 @@ const CASES = {
     name: 'Hellfire Case',
     price: 1200,
     color: '#ef4444',
-    img: 'hellfire_case.png',         // кладёшь файл в webapp/hellfire_case.png
+    img: 'hellfire_case.jpg',         // кладёшь файл в webapp/hellfire_case.jpg
     imgFallback: (function() {
       var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
         + '<defs>'
