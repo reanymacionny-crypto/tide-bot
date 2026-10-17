@@ -147,6 +147,9 @@ function nftPreviewSrc(nft) {
   if (nft.isPhoto) return nft.photoSrc || '';
   return nft.img || '';
 }
+
+// Для модалки — квадратная обёртка с аурой
+function nftModalImgHtml(nft) {
   if (nft.isPhoto) {
     const aura = nft.auraColor || '#fbbf24';
     const bg1  = nft.bg1 || '#0a0a14';
