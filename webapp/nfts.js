@@ -546,6 +546,7 @@ var NFTS = {
     desc: "едчайший синий цветок с другой планеты. оворят, он исполняет желания.",
     isPhoto: true,
     photoSrc: 'blue_flowers.png',
+    darkBg: true,
     auraColor: '#60a5fa',
     bg1: '#000a1a', bg2: '#00040e'
   },

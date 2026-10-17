@@ -1769,6 +1769,7 @@ html, body {
     color-mix(in srgb, var(--cc, var(--gold)) 35%, transparent) 0%,
     transparent 70%);
   pointer-events: none;
+  z-index: 0;
   animation: case-glow-pulse 2.5s ease-in-out infinite;
 }
 @keyframes case-glow-pulse {
@@ -1780,9 +1781,7 @@ html, body {
   height: 88%;
   object-fit: contain;
   position: relative;
-  z-index: 1;
-  /* убираем чёрный фон у jpg кейсов */
-  mix-blend-mode: lighten;
+  z-index: 2;
 }
 .case-grid-name  { font-size: 12px; font-weight: 800; color: var(--text); padding: 8px 10px 2px; }
 .case-grid-price { font-size: 13px; font-weight: 900; padding: 0 10px 10px; }
