@@ -80,6 +80,7 @@ function showScreen(name) {
   const btn = document.querySelector(`[data-screen="${name}"]`);
   if (btn) btn.classList.add('active');
   if (name === 'market')  renderMarket();
+  if (name === 'cases')   renderCases();
   if (name === 'list')    renderList();
   if (name === 'sales')   renderSales();
   if (name === 'admin')   renderAdmin();
@@ -887,9 +888,9 @@ function updateChanceUI() {
   if (vi) vi.textContent=chance+'%';
   if (sl) { sl.value=chance; sl.disabled=false; }
   if (fromNft&&toNft&&ii) {
-    const cost=Math.round(Math.max(toNft.price-fromNft.price,100)*(75/chance)*0.1);
-    state.upgradeCost=cost;
-    ii.textContent=`Стоимость: ${cost.toLocaleString()} TC`;
+    // Апгрейд БЕСПЛАТНЫЙ — стоимость 0
+    state.upgradeCost = 0;
+    ii.textContent = `Бесплатно`;
   }
 }
 
@@ -1365,6 +1366,219 @@ async function adminRemoveStock(stockId) {
     toast('Убрано из стока', '');
     loadAdminTab();
   } catch { toast('Ошибка', 'error'); }
+}
+
+// ── CASES ─────────────────────────────────────────────
+
+// Poison Case — содержимое с шансами
+const CASES = {
+  poison: {
+    id: 'poison',
+    name: 'Poison Case',
+    price: 500,
+    // SVG иконка кейса в нашем стиле
+    img: (function() {
+      var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
+        + '<defs>'
+        + '<linearGradient id="cbg" x1="0%" y1="0%" x2="100%" y2="100%">'
+        + '<stop offset="0%" stop-color="#0a1a0a"/>'
+        + '<stop offset="100%" stop-color="#040e04"/>'
+        + '</linearGradient>'
+        + '<filter id="cglow"><feGaussianBlur stdDeviation="4"/></filter>'
+        + '</defs>'
+        + '<rect width="200" height="200" rx="20" fill="url(#cbg)"/>'
+        // Зелёные полосы по углам
+        + '<rect x="0" y="0" width="8" height="200" rx="4" fill="#22c55e" opacity="0.6"/>'
+        + '<rect x="192" y="0" width="8" height="200" rx="4" fill="#22c55e" opacity="0.6"/>'
+        + '<rect x="0" y="0" width="200" height="8" rx="4" fill="#22c55e" opacity="0.6"/>'
+        + '<rect x="0" y="192" width="200" height="8" rx="4" fill="#22c55e" opacity="0.6"/>'
+        // Свечение
+        + '<circle cx="100" cy="100" r="70" fill="#22c55e" opacity="0.06" filter="url(#cglow)"/>'
+        // Биогазардный символ
+        + '<text x="100" y="92" font-size="72" text-anchor="middle" dominant-baseline="middle">☣️</text>'
+        // Надпись
+        + '<text x="100" y="155" font-size="18" font-weight="bold" text-anchor="middle" fill="#22c55e" font-family="sans-serif">POISON</text>'
+        + '<text x="100" y="173" font-size="12" text-anchor="middle" fill="#4ade80" font-family="sans-serif">CASE</text>'
+        + '</svg>';
+      return 'data:image/svg+xml,' + encodeURIComponent(s);
+    })(),
+    items: [
+      // { nft_id, chance(%), display_chance }
+      { nft_id: 1,  chance: 35,  label: 'Evil Eye',       rarity: 'Common',    price: 250   },
+      { nft_id: 13, chance: 32,  label: 'Magic Mushroom', rarity: 'Common',    price: 220   },
+      { nft_id: 4,  chance: 34,  label: 'Voodoo Doll',    rarity: 'Common',    price: 200   },
+      { nft_id: 28, chance: 15,  label: 'Homemade Cake',  rarity: 'Rare',      price: 1800  },
+      { nft_id: 31, chance: 13,  label: 'Jelly Bunny',    rarity: 'Rare',      price: 1900  },
+      { nft_id: 34, chance: 10,  label: 'Spiced Wine',    rarity: 'Rare',      price: 2200  },
+      { nft_id: 50, chance: 2,   label: 'Santa Hat',      rarity: 'Legendary', price: 44000 },
+      { nft_id: 45, chance: 3.5, label: 'Precious Peach', rarity: 'Legendary', price: 32000 },
+    ]
+  }
+};
+
+function renderCases() {
+  const el = document.getElementById('screen-cases');
+  const c  = CASES.poison;
+  el.innerHTML = `
+    <div class="screen-header">Кейсы</div>
+    <div class="case-card" onclick="openCaseModal('poison')">
+      <img src="${c.img}" class="case-card-img">
+      <div class="case-card-body">
+        <div class="case-card-name">${c.name}</div>
+        <div class="case-card-price">${c.price.toLocaleString()} TC</div>
+        <div class="case-card-sub">Нажми чтобы открыть</div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px 8px">
+      <div class="section-label" style="padding:0 0 12px">Содержимое кейса</div>
+      <div class="case-contents">
+        ${c.items.map(item => {
+          const n = NFTS[item.nft_id];
+          return `
+            <div class="case-item rarity-border-${item.rarity}">
+              <img src="${n ? n.img : ''}" class="case-item-img">
+              <div class="case-item-name">${item.label}</div>
+              <div class="case-item-chance" style="color:${item.rarity==='Legendary'?'var(--legendary)':item.rarity==='Rare'?'var(--rare)':'var(--green)'}">${item.chance}%</div>
+              <div class="case-item-price">${item.price.toLocaleString()} TC</div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  `;
+}
+
+function openCaseModal(caseId) {
+  const c = CASES[caseId];
+  openModal(`
+    <div style="text-align:center;margin-bottom:12px">
+      <img src="${c.img}" style="width:120px;height:120px;object-fit:cover;border-radius:16px">
+    </div>
+    <div class="modal-title">${c.name}</div>
+    <div class="modal-desc">Внутри один из ${c.items.length} предметов.<br>Шанс выпадения зависит от редкости.</div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-val">${c.price}</div><div class="stat-lbl">TC цена</div></div>
+      <div class="stat-box"><div class="stat-val">${c.items.length}</div><div class="stat-lbl">Предметов</div></div>
+    </div>
+    <button class="btn-primary case-open-btn" onclick="startCaseOpen('${caseId}')">Открыть за ${c.price} TC</button>
+    <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
+  `);
+}
+
+let caseOpening = false;
+
+async function startCaseOpen(caseId) {
+  const c = CASES[caseId];
+  if (caseOpening) return;
+  if (state.balance < c.price) { toast('Недостаточно T Coins', 'error'); return; }
+
+  closeModal();
+  caseOpening = true;
+  state.balance -= c.price;
+  renderHome();
+
+  // Определяем выигрыш на сервере (или локально)
+  let wonItem = null;
+  try {
+    const res = await apiPost('/open_case', { case_id: caseId });
+    if (res.ok) {
+      wonItem = c.items.find(i => i.nft_id === res.nft_id);
+      state.balance   = res.balance;
+      state.inventory = res.inventory;
+    }
+  } catch {}
+
+  // Если сервер недоступен — считаем локально по шансам
+  if (!wonItem) {
+    const total = c.items.reduce((s, i) => s + i.chance, 0);
+    let rand = Math.random() * total;
+    for (const item of c.items) {
+      rand -= item.chance;
+      if (rand <= 0) { wonItem = item; break; }
+    }
+    if (!wonItem) wonItem = c.items[0];
+    state.inventory.push({ inv_id: Date.now(), nft_id: wonItem.nft_id });
+  }
+
+  // Запускаем анимацию
+  playCaseAnimation(c, wonItem);
+}
+
+function playCaseAnimation(c, wonItem) {
+  const overlay = document.getElementById('case-open-overlay');
+  const reel    = document.getElementById('case-reel');
+  const result  = document.getElementById('case-open-result');
+
+  overlay.style.display = 'flex';
+  result.innerHTML = '';
+  result.className = 'case-open-result';
+
+  // Генерируем ленту — 40 предметов + выигрыш в центре (позиция 32)
+  const WIN_POS = 32;
+  const items = [];
+  for (let i = 0; i < 40; i++) {
+    if (i === WIN_POS) {
+      items.push(wonItem);
+    } else {
+      // Случайный предмет с учётом шансов
+      const total = c.items.reduce((s, x) => s + x.chance, 0);
+      let rand = Math.random() * total;
+      let picked = c.items[0];
+      for (const it of c.items) { rand -= it.chance; if (rand <= 0) { picked = it; break; } }
+      items.push(picked);
+    }
+  }
+
+  const ITEM_W = 80; // px ширина одного элемента
+  reel.innerHTML = items.map(item => {
+    const n = NFTS[item.nft_id];
+    const rarityColor = { Common: '#22c55e', Rare: '#3b82f6', Legendary: '#f59e0b' }[item.rarity] || '#fff';
+    return `
+      <div class="case-reel-item" style="border-color:${rarityColor}20">
+        <img src="${n ? n.img : ''}" style="width:60px;height:60px;object-fit:cover;border-radius:10px">
+        <div style="font-size:9px;font-weight:700;color:${rarityColor};margin-top:4px;text-align:center;white-space:nowrap;overflow:hidden;max-width:70px;text-overflow:ellipsis">${item.label}</div>
+      </div>`;
+  }).join('');
+
+  // Позиционируем рулетку так чтобы WIN_POS оказался по центру
+  const reelWrapW = document.querySelector('.case-reel-wrap').offsetWidth || 320;
+  const centerOffset = reelWrapW / 2 - ITEM_W / 2;
+  const targetX = -(WIN_POS * ITEM_W - centerOffset) + (Math.random() * 40 - 20);
+
+  // Анимация
+  reel.style.transition = 'none';
+  reel.style.transform  = 'translateX(0)';
+
+  setTimeout(() => {
+    reel.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.0)';
+    reel.style.transform  = `translateX(${targetX}px)`;
+  }, 80);
+
+  // Через 4.2с показываем результат
+  setTimeout(() => {
+    const n = NFTS[wonItem.nft_id];
+    const rarityColor = { Common: '#22c55e', Rare: '#3b82f6', Legendary: '#f59e0b' }[wonItem.rarity] || '#fff';
+    result.innerHTML = `
+      <div class="case-result-card" style="border-color:${rarityColor}">
+        <img src="${n ? n.img : ''}" style="width:80px;height:80px;object-fit:cover;border-radius:14px;margin-bottom:10px">
+        <div style="font-size:18px;font-weight:900;color:var(--text)">${wonItem.label}</div>
+        <div style="font-size:12px;font-weight:700;color:${rarityColor};margin:4px 0">${wonItem.rarity}</div>
+        <div style="font-size:13px;color:var(--gold)">${wonItem.price.toLocaleString()} TC</div>
+      </div>
+      <button class="btn-primary" style="margin-top:14px;width:100%" onclick="closeCaseOverlay()">Забрать</button>
+    `;
+    result.className = 'case-open-result visible';
+    toast(`Выпало: ${wonItem.label}!`, 'success');
+    caseOpening = false;
+    renderHome(); renderInventory();
+  }, 4300);
+}
+
+function closeCaseOverlay() {
+  document.getElementById('case-open-overlay').style.display = 'none';
+  document.getElementById('case-reel').style.transition = 'none';
+  document.getElementById('case-reel').style.transform  = 'translateX(0)';
 }
 
 // ── INIT ──────────────────────────────────────────────

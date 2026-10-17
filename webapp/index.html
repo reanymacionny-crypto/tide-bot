@@ -9,6 +9,7 @@
 </head>
 <body>
   <div id="screen-home"    class="screen active"></div>
+  <div id="screen-cases"   class="screen"></div>
   <div id="screen-market"  class="screen"></div>
   <div id="screen-inv"     class="screen"></div>
   <div id="screen-list"    class="screen"></div>
@@ -16,10 +17,26 @@
   <div id="screen-upgrade" class="screen"></div>
   <div id="screen-admin"   class="screen"></div>
 
+  <!-- Анимация открытия кейса — поверх всего -->
+  <div id="case-open-overlay" class="case-overlay" style="display:none">
+    <div class="case-open-wrap">
+      <div class="case-open-title">POISON CASE</div>
+      <div class="case-reel-wrap">
+        <div class="case-reel-pointer"></div>
+        <div class="case-reel" id="case-reel"></div>
+      </div>
+      <div class="case-open-result" id="case-open-result"></div>
+    </div>
+  </div>
+
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-btn active" data-screen="home" onclick="showScreen('home')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 22V12h6v10"/></svg>
       <span>Главная</span>
+    </button>
+    <button class="nav-btn" data-screen="cases" onclick="showScreen('cases')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="12" y1="11" x2="12" y2="15"/><line x1="10" y1="13" x2="14" y2="13"/></svg>
+      <span>Кейсы</span>
     </button>
     <button class="nav-btn" data-screen="market" onclick="showScreen('market')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -41,7 +58,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
       <span>Апгрейд</span>
     </button>
-    <!-- Кнопка ADMIN — показывается только овнеру через JS -->
     <button class="nav-btn nav-admin" id="nav-admin-btn" data-screen="admin" onclick="showScreen('admin')" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
       <span>Admin</span>

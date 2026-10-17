@@ -292,7 +292,57 @@ async def api_stock_get(request):
     stock = await get_stock()
     return web.json_response({'stock': stock})
 
-# ── /api/withdraw_request — запросить вывод ──────────────────
+# ── /api/open_case — открыть кейс ────────────────────────────
+CASE_ITEMS = {
+    'poison': [
+        {'nft_id': 1,  'chance': 35,  'price': 250   },
+        {'nft_id': 13, 'chance': 32,  'price': 220   },
+        {'nft_id': 4,  'chance': 34,  'price': 200   },
+        {'nft_id': 28, 'chance': 15,  'price': 1800  },
+        {'nft_id': 31, 'chance': 13,  'price': 1900  },
+        {'nft_id': 34, 'chance': 10,  'price': 2200  },
+        {'nft_id': 50, 'chance': 2,   'price': 44000 },
+        {'nft_id': 45, 'chance': 3.5, 'price': 32000 },
+    ]
+}
+CASE_PRICES = {'poison': 500}
+
+async def api_open_case(request):
+    uid = get_user_id(request)
+    if not uid:
+        return web.json_response({'error': 'Unauthorized'}, status=401)
+    data    = await request.json()
+    case_id = data.get('case_id', 'poison')
+    price   = CASE_PRICES.get(case_id, 500)
+    items   = CASE_ITEMS.get(case_id)
+    if not items:
+        return web.json_response({'error': 'Кейс не найден'})
+    user = await get_or_create_user(uid, '')
+    if user['tcoins'] < price:
+        return web.json_response({'error': f'Недостаточно TC. Нужно {price}'})
+    ok = await spend_tcoins(uid, price, f'Открытие кейса {case_id}')
+    if not ok:
+        return web.json_response({'error': 'Ошибка списания'})
+    # Выбираем предмет по шансам
+    total = sum(i['chance'] for i in items)
+    rand  = random.uniform(0, total)
+    won   = items[-1]
+    for item in items:
+        rand -= item['chance']
+        if rand <= 0:
+            won = item
+            break
+    await add_nft_to_inventory(uid, won['nft_id'])
+    user = await get_user(uid)
+    inv  = await get_user_inventory(uid)
+    return web.json_response({
+        'ok':        True,
+        'nft_id':    won['nft_id'],
+        'balance':   user['tcoins'],
+        'inventory': [{'inv_id': i['id'], 'nft_id': i['nft_id']} for i in inv]
+    })
+
+
 async def api_withdraw_request(request):
     uid = get_user_id(request)
     if not uid:
@@ -480,6 +530,7 @@ async def create_app():
     app.router.add_post('/api/buy_stock',            api_buy_stock)
     app.router.add_post('/api/sell',                 api_sell)
     app.router.add_post('/api/upgrade',              api_upgrade)
+    app.router.add_post('/api/open_case',            api_open_case)
     app.router.add_post('/api/list',                 api_list)
     app.router.add_post('/api/unlist',               api_unlist)
     app.router.add_get('/api/stock',                 api_stock_get)
