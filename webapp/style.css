@@ -1,3 +1,7 @@
+/* ерсонажи с чёрным фоном — mix-blend-mode убирает фон, оставляя цветные детали */
+.dark-bg-photo {
+  mix-blend-mode: lighten;
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {

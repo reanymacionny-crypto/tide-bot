@@ -173,7 +173,7 @@ function nftImgHtml(nft, cls = '') {
       <div class="nft-photo-particles">
         ${[...Array(8)].map((_,i) => `<div class="nft-particle" style="--i:${i};--c:${aura}"></div>`).join('')}
       </div>
-      <img src="${nft.photoSrc}" class="nft-photo-img" loading="lazy"
+      <img src="${nft.photoSrc}" class="nft-photo-img${nft.darkBg ? ' dark-bg-photo' : ''}" loading="lazy"
         onerror="this.style.opacity='.3'">
     </div>`;
   }
@@ -1615,9 +1615,46 @@ const CASES = {
       // Ультра-редкий 0.05%
       { nft_id: 54, chance: 0.05, label: 'Plush Fiend',    rarity: 'Legendary', price: 2500000},
     ]
+  },
+
+  nightmare: {
+    id: 'nightmare',
+    name: 'Nightmare Case',
+    price: 3500,
+    color: '#a855f7',
+    img: 'nightmare_case.jpg',
+    imgFallback: (function() {
+      var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
+        + '<defs>'
+        + '<radialGradient id="nbg" cx="50%" cy="40%" r="70%"><stop offset="0%" stop-color="#1a0a2e"/><stop offset="100%" stop-color="#04020a"/></radialGradient>'
+        + '<filter id="ngl"><feGaussianBlur stdDeviation="6"/></filter>'
+        + '</defs>'
+        + '<rect width="200" height="200" rx="22" fill="url(#nbg)"/>'
+        + '<circle cx="100" cy="90" r="55" fill="#7c3aed" opacity="0.08" filter="url(#ngl)"/>'
+        + '<text x="100" y="85" font-size="64" text-anchor="middle" dominant-baseline="middle">💀</text>'
+        + '<text x="100" y="148" font-size="16" font-weight="900" text-anchor="middle" fill="#a855f7" font-family="sans-serif" letter-spacing="2">NIGHTMARE</text>'
+        + '<text x="100" y="167" font-size="11" text-anchor="middle" fill="#7c3aed" font-family="sans-serif" letter-spacing="2" opacity="0.7">CASE</text>'
+        + '</svg>';
+      return 'data:image/svg+xml,' + encodeURIComponent(s);
+    })(),
+    items: [
+      // Common
+      { nft_id: 7,  chance: 30,   label: 'Eternal Rose',   rarity: 'Common',    price: 150    },
+      { nft_id: 19, chance: 28,   label: 'Love Candle',     rarity: 'Common',    price: 250    },
+      { nft_id: 34, chance: 22,   label: 'Spiced Wine',     rarity: 'Common',    price: 120    },
+      // Rare
+      { nft_id: 8,  chance: 10,   label: 'Eternal Rose',   rarity: 'Rare',      price: 2800   },
+      { nft_id: 20, chance: 8,    label: 'Love Candle',     rarity: 'Rare',      price: 4200   },
+      { nft_id: 35, chance: 6,    label: 'Spiced Wine',     rarity: 'Rare',      price: 2200   },
+      // Legendary
+      { nft_id: 57, chance: 1.0,  label: 'Blue Flowers',   rarity: 'Legendary', price: 75000  },
+      { nft_id: 9,  chance: 0.5,  label: 'Eternal Rose',   rarity: 'Legendary', price: 55000  },
+      { nft_id: 52, chance: 0.1,  label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000 },
+      // Ультра-редкий
+      { nft_id: 56, chance: 0.05, label: 'Plush Ghost',    rarity: 'Legendary', price: 2000000},
+    ]
   }
 };
-
 let activeCaseId = null; // null = показываем список
 
 function renderCases() {

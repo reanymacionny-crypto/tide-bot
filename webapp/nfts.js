@@ -531,7 +531,37 @@ var NFTS = {
     desc: "ризрачный плюш из потустороннего мира. Светится в темноте и исчезает на рассвете.",
     isPhoto: true,
     photoSrc: 'plush_ghost.png',
+    darkBg: true,
     auraColor: '#a5f3fc',
     bg1: '#00101a', bg2: '#000a12'
+  },
+
+  // ════════════════════════════════════════════
+  //  BLUE FLOWERS — 75K TC
+  // ════════════════════════════════════════════
+  57: {
+    name: "Blue Flowers",
+    rarity: "Legendary",
+    price: 75000, sell: 7900,
+    desc: "едчайший синий цветок с другой планеты. оворят, он исполняет желания.",
+    isPhoto: true,
+    photoSrc: 'blue_flowers.png',
+    auraColor: '#60a5fa',
+    bg1: '#000a1a', bg2: '#00040e'
+  },
+
+  // ════════════════════════════════════════════
+  //  PLUSH MYERS — уникальный, 2.3M TC
+  // ════════════════════════════════════════════
+  58: {
+    name: "Plush Myers",
+    rarity: "Legendary",
+    price: 2300000, sell: 243000,
+    desc: "айкл айерс в плюшевом виде. олчит, но смотрит. едчайший коллекционный предмет.",
+    isPhoto: true,
+    photoSrc: 'plush_myers.png',
+    auraColor: '#94a3b8',
+    darkBg: true,
+    bg1: '#0a0a0a', bg2: '#050505'
   },
 };
