@@ -854,6 +854,21 @@ function renderUpgrade() {
             <div class="upg-chance-label">Ставка</div>
             <div style="font-size:18px;font-weight:900;color:var(--gold2)">${bet.toLocaleString()} TC</div>
           </div>
+          <!-- Быстрые пресеты X2/X3/X4 -->
+          <div class="upg-mult-btns" style="margin-bottom:12px">
+            <button class="upg-mult ${bet===0?'active':''}" onclick="onBetChange(0)">
+              Без<span>бесплатно</span>
+            </button>
+            <button class="upg-mult ${fromNft && bet===fromNft.price?'active':''}" onclick="onBetChange(${fromNft ? fromNft.price : 0})">
+              X2<span>${fromNft ? fromNft.price.toLocaleString()+' TC' : '—'}</span>
+            </button>
+            <button class="upg-mult ${fromNft && bet===fromNft.price*2?'active':''}" onclick="onBetChange(${fromNft ? fromNft.price*2 : 0})">
+              X3<span>${fromNft ? (fromNft.price*2).toLocaleString()+' TC' : '—'}</span>
+            </button>
+            <button class="upg-mult ${fromNft && bet===fromNft.price*3?'active':''}" onclick="onBetChange(${fromNft ? fromNft.price*3 : 0})">
+              X4<span>${fromNft ? (fromNft.price*3).toLocaleString()+' TC' : '—'}</span>
+            </button>
+          </div>
           <input type="range" class="upg-slider" id="upg-bet-slider"
             min="0" max="${maxBet}" step="${Math.max(50, Math.floor(maxBet/100))}"
             value="${bet}" oninput="onBetChange(this.value)">
@@ -1627,10 +1642,25 @@ function playCaseAnimation(c, wonItem) {
   const overlay = document.getElementById('case-open-overlay');
   const reel    = document.getElementById('case-reel');
   const result  = document.getElementById('case-open-result');
+  const title   = document.getElementById('case-open-title');
 
   overlay.style.display = 'flex';
   result.innerHTML = '';
   result.className = 'case-open-result';
+
+  // Заголовок с названием и цветом конкретного кейса
+  if (title) {
+    title.textContent = c.name.toUpperCase();
+    title.style.color = c.color || '#4ade80';
+    title.style.textShadow = `0 0 20px ${c.color || '#4ade80'}66`;
+  }
+
+  // Цвет указателя под кейс
+  const pointer = document.querySelector('.case-reel-pointer');
+  if (pointer) {
+    pointer.style.background = c.color || '#4ade80';
+    pointer.style.boxShadow  = `0 0 12px ${c.color || '#4ade80'}cc`;
+  }
 
   // Генерируем ленту — 40 предметов + выигрыш в центре (позиция 32)
   const WIN_POS = 32;
