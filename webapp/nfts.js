@@ -488,7 +488,7 @@ var NFTS = {
     price: 3400000, sell: 360000,
     desc: "Единственный в своём роде. Настоящий артефакт коллекционера. Таких больше нет.",
     isPhoto: true,
-    photoSrc: 'plush_voke.jpg',
+    photoSrc: 'plush_voke.png',
     auraColor: '#ef4444',
     bg1: '#1a0000', bg2: '#050000'
   },
@@ -502,7 +502,7 @@ var NFTS = {
     price: 2500000, sell: 265000,
     desc: "Тёмный демон в мягкой оболочке. Редчайший коллекционный предмет.",
     isPhoto: true,
-    photoSrc: 'plush_fiend.jpg',
+    photoSrc: 'plush_fiend.png',
     auraColor: '#a855f7',
     bg1: '#12001a', bg2: '#060009'
   },
@@ -516,7 +516,7 @@ var NFTS = {
     price: 1900000, sell: 200000,
     desc: "Мясник в мягкой форме. Знаменитый герой Dota 2 в виде плюшевого коллекционного предмета.",
     isPhoto: true,
-    photoSrc: 'plush_pudge.jpg',
+    photoSrc: 'plush_pudge.png',
     auraColor: '#f97316',
     bg1: '#1a0800', bg2: '#090400'
   },
