@@ -168,7 +168,7 @@ function nftImgHtml(nft, cls = '') {
     const aura = nft.auraColor || '#fbbf24';
     // Яркий насыщенный фон под персонажем
     const bg = nft.darkBg ? '#000' : `radial-gradient(ellipse at 50% 70%, ${aura}55 0%, ${aura}22 45%, #080814 100%)`;
-    return `<div class="nft-photo-wrap ${cls}" style="--aura:${aura};background:${bg}">
+    return `<div class="nft-photo-wrap ${cls}${nft.darkBg ? ' dark-bg-wrap' : ''}" style="--aura:${aura};background:${bg}">
       <div class="nft-photo-glow" style="background:${aura}"></div>
       <div class="nft-photo-particles">
         ${[...Array(8)].map((_,i) => `<div class="nft-particle" style="--i:${i};--c:${aura}"></div>`).join('')}
@@ -1850,7 +1850,7 @@ function playCaseAnimation(c, wonItem) {
   // Позиционируем рулетку так чтобы WIN_POS оказался по центру
   const reelWrapW = document.querySelector('.case-reel-wrap').offsetWidth || 320;
   const centerOffset = reelWrapW / 2 - ITEM_W / 2;
-  const targetX = -(WIN_POS * ITEM_W - centerOffset) + (Math.random() * 40 - 20);
+  const targetX = -(WIN_POS * ITEM_W - centerOffset);
 
   // Анимация
   reel.style.transition = 'none';
