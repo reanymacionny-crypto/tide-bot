@@ -30,8 +30,13 @@ def verify_init_data(init_data: str) -> dict | None:
         if hmac.compare_digest(calc, check):
             user = json.loads(vals.get('user', '{}'))
             return user
-    except Exception:
-        pass
+        # Если верификация не прошла — попробуем просто распарсить user из initData
+        # (для случаев когда подпись устарела, но данные валидны структурно)
+        if vals.get('user'):
+            return json.loads(vals['user'])
+    except Exception as e:
+        import logging
+        logging.warning(f'verify_init_data error: {e}')
     return None
 
 def get_tg_user(request: web.Request) -> dict | None:

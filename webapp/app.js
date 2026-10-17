@@ -1124,12 +1124,20 @@ function renderAdmin() {
     return;
   }
   const el = document.getElementById('screen-admin');
+  const tabLabels = {
+    stats:      'Статистика',
+    users:      'Юзеры',
+    give_nft:   'Выдать NFT',
+    give_coins: 'Монеты',
+    stars:      'Звёзды',
+    stock:      'Сток'
+  };
   el.innerHTML = `
-    <div class="screen-header">👑 Админ панель</div>
+    <div class="screen-header">Админ панель</div>
     <div class="admin-tabs">
-      ${['stats','users','give_nft','give_coins','stars','stock'].map(t => `
+      ${Object.keys(tabLabels).map(t => `
         <button class="admin-tab ${adminTab===t?'active':''}" onclick="setAdminTab('${t}')">
-          ${{stats:'📊 Стат',users:'👥 Юзеры',give_nft:'🎁 NFT',give_coins:'🪙 Монеты',stars:'⭐ Звёзды',stock:'📦 Сток'}[t]}
+          ${tabLabels[t]}
         </button>`).join('')}
     </div>
     <div id="admin-content" style="padding:0 16px 24px"></div>
@@ -1148,11 +1156,11 @@ async function loadAdminTab() {
       const d = await apiGet('/admin/stats');
       el.innerHTML = `
         <div class="admin-stats-grid">
-          <div class="admin-stat-card"><div class="admin-stat-val">${d.users}</div><div class="admin-stat-lbl">👥 Пользователей</div></div>
-          <div class="admin-stat-card"><div class="admin-stat-val">${d.nfts_out}</div><div class="admin-stat-lbl">🎒 NFT выдано</div></div>
-          <div class="admin-stat-card" style="grid-column:1/-1"><div class="admin-stat-val">${d.stars} ⭐</div><div class="admin-stat-lbl">Звёзд в боте</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-val">${d.users}</div><div class="admin-stat-lbl">Пользователей</div></div>
+          <div class="admin-stat-card"><div class="admin-stat-val">${d.nfts_out}</div><div class="admin-stat-lbl">NFT выдано</div></div>
+          <div class="admin-stat-card" style="grid-column:1/-1"><div class="admin-stat-val">${d.stars}</div><div class="admin-stat-lbl">Звёзд в боте</div></div>
         </div>`;
-    } catch { el.innerHTML = '<div class="search-empty">Ошибка загрузки</div>'; }
+    } catch { el.innerHTML = '<div class="search-empty">Ошибка загрузки статистики</div>'; }
   }
 
   else if (adminTab === 'users') {
@@ -1163,28 +1171,28 @@ async function loadAdminTab() {
           ${d.users.map(u => `
             <div class="admin-user-row">
               <div class="admin-user-info">
-                <div class="admin-user-name">${u.username ? '@'+u.username : 'ID: '+u.user_id}</div>
+                <div class="admin-user-name">${u.username ? '@'+u.username : 'Без юзернейма'}</div>
                 <div class="admin-user-id">ID: ${u.user_id}</div>
               </div>
               <div class="admin-user-coins">${u.tcoins.toLocaleString()} TC</div>
             </div>`).join('')}
         </div>`;
-    } catch { el.innerHTML = '<div class="search-empty">Ошибка</div>'; }
+    } catch { el.innerHTML = '<div class="search-empty">Ошибка загрузки</div>'; }
   }
 
   else if (adminTab === 'give_nft') {
     el.innerHTML = `
       <div class="admin-form">
-        <div class="admin-form-label">User ID или @username</div>
-        <input class="admin-input" id="adm-nft-uid" type="text" placeholder="123456789 или @username"/>
-        <div class="admin-form-label" style="margin-top:12px">Поиск NFT</div>
+        <div class="admin-form-label">User ID пользователя</div>
+        <input class="admin-input" id="adm-nft-uid" type="number" placeholder="123456789"/>
+        <div class="admin-form-label" style="margin-top:12px">Поиск NFT по названию</div>
         <div class="home-search-wrap" style="margin:0 0 10px">
           <div class="home-search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
           <input class="home-search" id="adm-nft-search" type="text" placeholder="Название NFT..." oninput="renderAdminNftList()"/>
         </div>
         <div id="adm-nft-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:280px;overflow-y:auto"></div>
         <div id="adm-nft-selected" style="margin-top:10px;font-size:13px;color:var(--gold)"></div>
-        <button class="btn-primary" style="margin-top:12px" onclick="adminGiveNft()">🎁 Выдать NFT</button>
+        <button class="btn-primary" style="margin-top:12px" onclick="adminGiveNft()">Выдать NFT</button>
       </div>`;
     renderAdminNftList();
   }
@@ -1192,11 +1200,11 @@ async function loadAdminTab() {
   else if (adminTab === 'give_coins') {
     el.innerHTML = `
       <div class="admin-form">
-        <div class="admin-form-label">User ID или @username</div>
-        <input class="admin-input" id="adm-coin-uid" type="text" placeholder="123456789"/>
+        <div class="admin-form-label">User ID пользователя</div>
+        <input class="admin-input" id="adm-coin-uid" type="number" placeholder="123456789"/>
         <div class="admin-form-label" style="margin-top:12px">Количество T Coins</div>
         <input class="admin-input" id="adm-coin-amount" type="number" placeholder="10000"/>
-        <button class="btn-primary" style="margin-top:16px" onclick="adminGiveCoins()">🪙 Выдать монеты</button>
+        <button class="btn-primary" style="margin-top:16px" onclick="adminGiveCoins()">Выдать монеты</button>
       </div>`;
   }
 
@@ -1206,20 +1214,20 @@ async function loadAdminTab() {
       el.innerHTML = `
         <div class="admin-form">
           <div class="admin-stat-card" style="margin-bottom:16px">
-            <div class="admin-stat-val">${d.stars} ⭐</div>
-            <div class="admin-stat-lbl">Текущий баланс звёзд</div>
+            <div class="admin-stat-val">${d.stars}</div>
+            <div class="admin-stat-lbl">Текущий баланс звёзд бота</div>
           </div>
           <div class="admin-form-label">Установить количество звёзд</div>
           <input class="admin-input" id="adm-stars-amount" type="number" placeholder="1000"/>
-          <button class="btn-primary" style="margin-top:12px" onclick="adminSetStars()">⭐ Установить</button>
+          <button class="btn-primary" style="margin-top:12px" onclick="adminSetStars()">Установить</button>
         </div>`;
-    } catch { el.innerHTML = '<div class="search-empty">Ошибка</div>'; }
+    } catch { el.innerHTML = '<div class="search-empty">Ошибка загрузки</div>'; }
   }
 
   else if (adminTab === 'stock') {
     el.innerHTML = `
       <div class="admin-form">
-        <div class="admin-form-label">Выставить NFT в сток (от имени бота)</div>
+        <div class="admin-form-label">Выставить NFT в сток</div>
         <div class="home-search-wrap" style="margin:8px 0 10px">
           <div class="home-search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
           <input class="home-search" id="adm-stock-search" type="text" placeholder="Название NFT..." oninput="renderAdminStockList()"/>
@@ -1230,7 +1238,7 @@ async function loadAdminTab() {
         <input class="admin-input" id="adm-stock-price" type="number" placeholder="5000" style="margin-bottom:8px"/>
         <div class="admin-form-label">Имя продавца</div>
         <input class="admin-input" id="adm-stock-seller" type="text" placeholder="STOCK" value="STOCK" style="margin-bottom:12px"/>
-        <button class="btn-primary" onclick="adminAddStock()">📦 Выставить в сток</button>
+        <button class="btn-primary" onclick="adminAddStock()">Выставить в сток</button>
       </div>
 
       ${state.stock.length ? `
@@ -1244,7 +1252,7 @@ async function loadAdminTab() {
                 <div class="listing-info">
                   <div class="listing-name">${n.name}</div>
                   <div class="listing-price">${s.price.toLocaleString()} TC</div>
-                  <div class="listing-date">📦 ${s.seller_name}</div>
+                  <div class="listing-date">${s.seller_name}</div>
                 </div>
                 <button class="listing-cancel" onclick="adminRemoveStock(${s.id})">Убрать</button>
               </div>`;
