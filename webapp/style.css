@@ -1782,6 +1782,7 @@ html, body {
   object-fit: contain;
   position: relative;
   z-index: 2;
+  mix-blend-mode: lighten;
 }
 .case-grid-name  { font-size: 12px; font-weight: 800; color: var(--text); padding: 8px 10px 2px; }
 .case-grid-price { font-size: 13px; font-weight: 900; padding: 0 10px 10px; }
