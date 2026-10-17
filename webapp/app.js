@@ -166,8 +166,8 @@ function nftImgHtml(nft, cls = '') {
   // Фото-NFT с аурой (plush и тд) — PNG с прозрачностью + красивый фон
   if (nft.isPhoto) {
     const aura = nft.auraColor || '#fbbf24';
-    // Уникальный фон для каждого: тёмный с цветным свечением в центре
-    const bg = `radial-gradient(ellipse at 50% 60%, ${aura}33 0%, ${aura}11 40%, #0a0a14 100%)`;
+    // Яркий насыщенный фон под персонажем
+    const bg = `radial-gradient(ellipse at 50% 70%, ${aura}55 0%, ${aura}22 45%, #080814 100%)`;
     return `<div class="nft-photo-wrap ${cls}" style="--aura:${aura};background:${bg}">
       <div class="nft-photo-glow" style="background:${aura}"></div>
       <div class="nft-photo-particles">
