@@ -141,8 +141,12 @@ function nftImgHtml(nft, cls = '') {
   return `<div class="nft-img-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="3"/></svg></div>`;
 }
 
-// Для модалки — квадратная обёртка с аурой
-function nftModalImgHtml(nft) {
+// Получить URL превью для любого NFT (для рулетки, списков и тд)
+function nftPreviewSrc(nft) {
+  if (!nft) return '';
+  if (nft.isPhoto) return nft.photoSrc || '';
+  return nft.img || '';
+}
   if (nft.isPhoto) {
     const aura = nft.auraColor || '#fbbf24';
     const bg1  = nft.bg1 || '#0a0a14';
@@ -1610,7 +1614,7 @@ function renderCases() {
             const rarityColor = {Common:'#22c55e',Rare:'#3b82f6',Legendary:'#f59e0b'}[item.rarity]||'#fff';
             return `
               <div class="case-content-row" style="border-left-color:${rarityColor}">
-                <img src="${n ? n.img : ''}" class="case-content-img">
+                <img src="${n ? nftPreviewSrc(n) : ''}" class="case-content-img">
                 <div class="case-content-info">
                   <div class="case-content-name">${item.label}</div>
                   <div class="case-content-rar" style="color:${rarityColor}">${item.rarity}</div>
@@ -1753,7 +1757,7 @@ function playCaseAnimation(c, wonItem) {
     const rarityColor = { Common: '#22c55e', Rare: '#3b82f6', Legendary: '#f59e0b' }[item.rarity] || '#fff';
     return `
       <div class="case-reel-item" style="border-color:${rarityColor}20">
-        <img src="${n ? n.img : ''}" style="width:60px;height:60px;object-fit:cover;border-radius:10px">
+        <img src="${n ? nftPreviewSrc(n) : ''}" style="width:60px;height:60px;object-fit:cover;border-radius:10px">
         <div style="font-size:9px;font-weight:700;color:${rarityColor};margin-top:4px;text-align:center;white-space:nowrap;overflow:hidden;max-width:70px;text-overflow:ellipsis">${item.label}</div>
       </div>`;
   }).join('');
