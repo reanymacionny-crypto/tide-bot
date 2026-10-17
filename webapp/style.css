@@ -1310,6 +1310,15 @@ html, body {
 }
 
 /* ── NAV fix для 6 кнопок ─────────────────────────── */
+.bottom-nav {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bottom-nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  min-width: 52px;
+  flex-shrink: 0;
+}
 .nav-btn span { font-size: 9px; }
 
 /* ── SELLER BADGE ────────────────────────────────────── */
