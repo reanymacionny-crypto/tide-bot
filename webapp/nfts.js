@@ -530,7 +530,7 @@ var NFTS = {
     price: 2000000, sell: 212000,
     desc: "ризрачный плюш из потустороннего мира. Светится в темноте и исчезает на рассвете.",
     isPhoto: true,
-    photoSrc: 'plush_ghost.jpg',
+    photoSrc: 'plush_ghost.png',
     auraColor: '#a5f3fc',
     bg1: '#00101a', bg2: '#000a12'
   },
