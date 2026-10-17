@@ -784,114 +784,143 @@ async function depositStars(stars) {
 }
 
 // ── UPGRADE ───────────────────────────────────────────
+// Апгрейд БЕСПЛАТНЫЙ.
+// Ставка (upgradeBet TC) — повышает целевой NFT и шанс.
+// Слайдер от 0 до баланса. Ставка списывается при победе (или проигрыше — на выбор).
+
+function calcUpgradeTarget() {
+  const fromNft = NFTS[state.upgradeFromId];
+  if (!fromNft) return { targetId: null, targetNft: null, chance: 0 };
+  const bet = state.upgradeBet || 0;
+  // Целевая цена = цена моего NFT + ставка * 1.5 (минимум в 1.2 раза дороже)
+  const targetPrice = Math.max(fromNft.price * 1.2, fromNft.price + bet * 1.5);
+  let bestId = null, bestNft = null, bestDiff = Infinity;
+  Object.entries(NFTS).forEach(([id, n]) => {
+    if (parseInt(id) === state.upgradeFromId) return;
+    if (n.price <= fromNft.price) return;
+    const diff = Math.abs(n.price - targetPrice);
+    if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
+  });
+  // Шанс: базовый по соотношению цен + бонус от ставки
+  let chance = 50;
+  if (bestNft) {
+    const ratio = fromNft.price / bestNft.price;
+    const betBonus = bestNft.price > 0 ? Math.min(bet / bestNft.price * 40, 20) : 0;
+    chance = Math.round(Math.min(ratio * 100 * 0.8 + betBonus, 75));
+    chance = Math.max(chance, 5);
+  }
+  return { targetId: bestId, targetNft: bestNft, chance };
+}
+
 function renderUpgrade() {
   const el  = document.getElementById('screen-upgrade');
   const inv = state.inventory;
+  const fromNft = NFTS[state.upgradeFromId];
+  const bet = state.upgradeBet || 0;
+  const { targetId, targetNft, chance } = calcUpgradeTarget();
+  state.upgradeTo     = targetId;
+  state.upgradeChance = chance;
+  state.upgradeCost   = 0;
+  const maxBet = fromNft ? Math.min(state.balance, fromNft.price * 4) : 0;
+  const chanceColor = chance >= 50 ? '#22c55e' : chance >= 25 ? '#f59e0b' : '#ef4444';
 
   el.innerHTML = `
     <div class="upgrade-wrap">
       <div class="upgrade-title">Апгрейд</div>
-      <div class="upgrade-sub">Выбери свой NFT → множитель → крути!</div>
+      <div class="upgrade-sub">Крути бесплатно. Ставка повышает цель и шанс.</div>
 
       <div class="upg-step-label"><span>1</span> Выбери свой NFT</div>
       <div class="upg-my-row">
-        ${!inv.length ? '<div style="color:var(--text-dim);font-size:13px;padding:8px">Нет NFT. Купи в маркете!</div>'
-        : inv.map(item => {
-            const n = NFTS[item.nft_id]; if (!n) return '';
-            const sel = state.upgradeFrom === item.inv_id;
-            return `<div class="upg-my-card ${sel?'selected':''}" onclick="selectUpgFrom(${item.inv_id},${item.nft_id})">
-              <img src="${n.img}" loading="lazy">
-              <div class="upg-my-name">${n.name}</div>
-              <div class="upg-my-price">${n.price.toLocaleString()} TC</div>
-            </div>`;
-          }).join('')}
+        ${!inv.length
+          ? '<div style="color:var(--text-dim);font-size:13px;padding:8px">Нет NFT. Купи в маркете!</div>'
+          : inv.map(item => {
+              const n = NFTS[item.nft_id]; if (!n) return '';
+              const isPending = state.pendingWithdraws.includes(item.inv_id);
+              const sel = state.upgradeFrom === item.inv_id;
+              return `<div class="upg-my-card ${sel?'selected':''} ${isPending?'upg-locked':''}"
+                onclick="${isPending?`toast('NFT на выводе','error')`:`selectUpgFrom(${item.inv_id},${item.nft_id})`}">
+                <img src="${n.img}" loading="lazy">
+                <div class="upg-my-name">${n.name}</div>
+                <div class="upg-my-price">${isPending ? '⏳ Вывод' : n.price.toLocaleString()+' TC'}</div>
+              </div>`;
+            }).join('')
+        }
       </div>
 
-      <div id="upg-step2" style="display:${state.upgradeFrom?'block':'none'}">
-        <div class="upg-step-label"><span>2</span> Выбери множитель</div>
-        <div class="upg-mult-btns">
-          ${[2,3,4].map(m=>`
-            <button class="upg-mult ${state.upgradeMult===m?'active':''}" onclick="setMult(${m})">
-              X${m}<span id="mult${m}-price">—</span>
-            </button>`).join('')}
-        </div>
+      <div style="display:${fromNft ? 'block' : 'none'}">
+        <!-- Ставка -->
         <div class="upg-chance-row">
-          <div class="upg-chance-label">Шанс победы</div>
-          <div class="upg-chance-val" id="upg-chance-val">${state.upgradeMult ? state.upgradeChance+'%' : '—'}</div>
-          <input type="range" class="upg-slider" id="upg-slider" min="5" max="75"
-            value="${state.upgradeChance||50}" oninput="onChanceChange(this.value)" ${state.upgradeMult?'':'disabled'}>
-          <div class="upg-chance-info" id="upg-chance-info">Выбери множитель</div>
-        </div>
-        <div id="upg-target-preview" style="display:${state.upgradeTo?'block':'none'}">
-          <div class="upg-step-label"><span>3</span> Цель</div>
-          <div class="upg-target-card" id="upg-target-card">
-            ${state.upgradeTo ? (() => { const t=NFTS[state.upgradeTo]; return t?`
-              <img src="${t.img}" loading="lazy">
-              <div>
-                <div class="upg-my-name">${t.name}</div>
-                <div style="font-size:11px;color:var(--${t.rarity.toLowerCase()});font-weight:700">${t.rarity}</div>
-                <div class="upg-my-price">${t.price.toLocaleString()} TC</div>
-              </div>`:''; })() : ''}
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <div class="upg-chance-label">Ставка</div>
+            <div style="font-size:18px;font-weight:900;color:var(--gold2)">${bet.toLocaleString()} TC</div>
+          </div>
+          <input type="range" class="upg-slider" id="upg-bet-slider"
+            min="0" max="${maxBet}" step="${Math.max(50, Math.floor(maxBet/100))}"
+            value="${bet}" oninput="onBetChange(this.value)">
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <span style="font-size:10px;color:var(--text-dim)">0 — бесплатно</span>
+            <span style="font-size:10px;color:var(--text-dim)">${maxBet.toLocaleString()} TC макс</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:6px">
+            ${bet > 0 ? 'Ставка списывается при любом исходе' : 'Без ставки — базовый шанс'}
           </div>
         </div>
-        <div class="wheel-container" id="wheel-container" style="display:${state.upgradeTo?'block':'none'}">
+
+        <!-- Цель + шанс -->
+        <div style="display:${targetNft ? 'block' : 'none'}">
+          <div class="upg-step-label"><span>2</span> Цель апгрейда</div>
+          <div class="upg-target-card">
+            <img src="${targetNft ? targetNft.img : ''}" style="width:60px;height:60px;border-radius:12px;object-fit:cover;flex-shrink:0">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:800;color:var(--text)">${targetNft ? targetNft.name : ''}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--${targetNft ? targetNft.rarity.toLowerCase() : 'text-dim'})">${targetNft ? targetNft.rarity : ''}</div>
+              <div style="font-size:12px;color:var(--gold);margin-top:2px">${targetNft ? targetNft.price.toLocaleString()+' TC' : ''}</div>
+            </div>
+            <div style="text-align:center;flex-shrink:0">
+              <div style="font-size:28px;font-weight:900;color:${chanceColor};line-height:1">${chance}%</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-top:2px">шанс</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Колесо -->
+        <div class="wheel-container" id="wheel-container" style="display:${targetNft ? 'block' : 'none'}">
           <canvas id="wheel-canvas" width="280" height="280"></canvas>
           <div class="wheel-arrow" id="wheel-arrow"></div>
           <div class="wheel-result" id="wheel-result"></div>
         </div>
-        <button class="btn-primary" id="upg-spin-btn" style="display:${state.upgradeTo?'block':'none'}" onclick="spinWheel()">⚡ Крутить колесо</button>
+
+        <button class="btn-primary" id="upg-spin-btn" style="display:${targetNft ? 'block' : 'none'}" onclick="spinWheel()">
+          ${bet > 0 ? `Крутить (ставка ${bet.toLocaleString()} TC)` : 'Крутить бесплатно'}
+        </button>
       </div>
     </div>`;
 
-  updateMultPrices();
-  if (state.upgradeTo) { updateChanceUI(); drawWheel(); }
+  if (targetNft) drawWheel();
 }
 
-function selectUpgFrom(invId, nftId) {
-  state.upgradeFrom=invId; state.upgradeFromId=nftId;
-  state.upgradeMult=null; state.upgradeTo=null; state.upgradeChance=50;
+function onBetChange(val) {
+  state.upgradeBet = parseInt(val) || 0;
   renderUpgrade();
 }
 
-function updateMultPrices() {
-  const fromNft = NFTS[state.upgradeFromId]; if (!fromNft) return;
-  [2,3,4].forEach(m => {
-    const el = document.getElementById(`mult${m}-price`);
-    if (el) el.textContent = `${(fromNft.price*m).toLocaleString()} TC`;
-  });
+function selectUpgFrom(invId, nftId) {
+  state.upgradeFrom   = invId;
+  state.upgradeFromId = nftId;
+  state.upgradeTo     = null;
+  state.upgradeChance = 50;
+  state.upgradeBet    = 0;
+  renderUpgrade();
 }
 
-function setMult(mult) {
-  state.upgradeMult=mult;
-  state.upgradeChance={2:50,3:25,4:12}[mult]||50;
-  const fromNft=NFTS[state.upgradeFromId], target=fromNft.price*mult;
-  let best=null, bestDiff=Infinity;
-  Object.entries(NFTS).forEach(([id,n]) => {
-    if (parseInt(id)===state.upgradeFromId) return;
-    const diff=Math.abs(n.price-target);
-    if (diff<bestDiff){bestDiff=diff;best=parseInt(id);}
-  });
-  state.upgradeTo=best;
-  renderUpgrade(); updateChanceUI(); drawWheel();
-}
-
-function onChanceChange(val) {
-  state.upgradeChance=parseInt(val); updateChanceUI(); drawWheel();
-}
+// Старые функции оставляем пустышками чтобы не сломать spinWheel
+function updateMultPrices() {}
+function setMult(mult) {}
+function onChanceChange(val) {}
 
 function updateChanceUI() {
-  const chance=state.upgradeChance||50;
-  const fromNft=NFTS[state.upgradeFromId], toNft=NFTS[state.upgradeTo];
-  const vi=document.getElementById('upg-chance-val');
-  const ii=document.getElementById('upg-chance-info');
-  const sl=document.getElementById('upg-slider');
-  if (vi) vi.textContent=chance+'%';
-  if (sl) { sl.value=chance; sl.disabled=false; }
-  if (fromNft&&toNft&&ii) {
-    // Апгрейд БЕСПЛАТНЫЙ — стоимость 0
-    state.upgradeCost = 0;
-    ii.textContent = `Бесплатно`;
-  }
+  // Всё считается в renderUpgrade через calcUpgradeTarget
+  state.upgradeCost = 0;
 }
 
 function drawWheel() {
@@ -1066,12 +1095,14 @@ async function spinWheel() {
   if(res){res.textContent='';res.className='wheel-result';}
   let won=false;
   try {
-    const r=await apiPost('/upgrade',{inv_id:state.upgradeFrom,to_id:state.upgradeTo,chance:state.upgradeChance,cost});
+    const r=await apiPost('/upgrade',{inv_id:state.upgradeFrom,to_id:state.upgradeTo,chance:state.upgradeChance,cost:state.upgradeBet||0});
     won=r.ok===true;
     if(r.balance!==undefined) state.balance=r.balance;
     if(r.inventory) state.inventory=r.inventory;
   } catch {
     won=Math.random()*100<(state.upgradeChance||50);
+    // Списываем ставку локально
+    if (state.upgradeBet > 0) state.balance -= state.upgradeBet;
     state.inventory=state.inventory.filter(i=>i.inv_id!==state.upgradeFrom);
     if(won) state.inventory.push({inv_id:Date.now(),nft_id:state.upgradeTo});
   }
@@ -1439,18 +1470,18 @@ const CASES = {
       return 'data:image/svg+xml,' + encodeURIComponent(s);
     })(),
     items: [
-      // Common (дешёвые, высокий шанс)
-      { nft_id: 7,  chance: 30,  label: 'Eternal Rose',   rarity: 'Common',    price: 150   },
-      { nft_id: 19, chance: 28,  label: 'Love Candle',    rarity: 'Common',    price: 250   },
-      { nft_id: 37, chance: 25,  label: 'Berry Box',      rarity: 'Common',    price: 100   },
-      // Rare (средние)
-      { nft_id: 20, chance: 14,  label: 'Love Candle',    rarity: 'Rare',      price: 4200  },
-      { nft_id: 35, chance: 12,  label: 'Spiced Wine',    rarity: 'Rare',      price: 2200  },
+      // Common — от самых дешёвых к дорогим, шанс убывает
+      { nft_id: 37, chance: 32,  label: 'Berry Box',      rarity: 'Common',    price: 100   },
+      { nft_id: 7,  chance: 28,  label: 'Eternal Rose',   rarity: 'Common',    price: 150   },
+      { nft_id: 19, chance: 22,  label: 'Love Candle',    rarity: 'Common',    price: 250   },
+      // Rare
       { nft_id: 38, chance: 10,  label: 'Berry Box',      rarity: 'Rare',      price: 1700  },
-      { nft_id: 8,  chance: 8,   label: 'Eternal Rose',   rarity: 'Rare',      price: 2800  },
-      // Legendary (дорогие, редкие)
-      { nft_id: 21, chance: 3,   label: 'Love Candle',    rarity: 'Legendary', price: 78000 },
+      { nft_id: 35, chance: 9,   label: 'Spiced Wine',    rarity: 'Rare',      price: 2200  },
+      { nft_id: 8,  chance: 7,   label: 'Eternal Rose',   rarity: 'Rare',      price: 2800  },
+      { nft_id: 20, chance: 5,   label: 'Love Candle',    rarity: 'Rare',      price: 4200  },
+      // Legendary
       { nft_id: 9,  chance: 2.5, label: 'Eternal Rose',   rarity: 'Legendary', price: 55000 },
+      { nft_id: 21, chance: 2,   label: 'Love Candle',    rarity: 'Legendary', price: 78000 },
       { nft_id: 52, chance: 0.5, label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000},
     ]
   }
