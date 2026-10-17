@@ -369,6 +369,7 @@ async function buyStockNft(stockId, nftId, price) {
       state.balance   = res.balance;
       state.inventory = res.inventory;
       state.stock     = state.stock.filter(s => s.id !== stockId);
+      saveState();
       renderHome(); renderInventory();
       closeModal();
       toast(`${NFTS[nftId]?.name} куплен!`, 'success');
@@ -493,6 +494,7 @@ async function buyUserListing(listingId, nftId, price) {
     if (res.ok) {
       state.balance = res.balance; state.inventory = res.inventory;
       state.publicListings = (state.publicListings||[]).filter(l => l.id !== listingId);
+      saveState();
       renderHome(); renderInventory(); closeModal();
       toast(`${NFTS[nftId]?.name} куплен!`, 'success');
     } else toast(res.error || 'Ошибка', 'error');
@@ -530,6 +532,7 @@ async function buyNft(id) {
     const res = await apiPost('/buy', { nft_id: id });
     if (res.ok) {
       state.balance = res.balance; state.inventory = res.inventory;
+      saveState();
       renderHome(); renderInventory(); renderUpgrade(); closeModal();
       toast(`${n.name} куплен!`, 'success');
     } else toast(res.error || 'Ошибка', 'error');
@@ -653,6 +656,7 @@ async function sellNft(invId, nftId) {
     if (res.ok) {
       state.balance = res.balance; state.inventory = res.inventory;
       state.pendingWithdraws = state.pendingWithdraws.filter(id => id !== invId);
+      saveState();
       renderHome(); renderInventory(); renderUpgrade(); closeModal();
       toast(`Получено ${n.sell} ⭐ Stars!`, 'success');
     } else if (res.no_stars) {
@@ -1772,6 +1776,7 @@ async function startCaseOpen(caseId) {
       wonItem = c.items.find(i => i.nft_id === res.nft_id);
       state.balance   = res.balance;
       state.inventory = res.inventory;
+      saveState();
     }
   } catch {}
 
