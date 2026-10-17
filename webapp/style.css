@@ -1,8 +1,3 @@
-/* ерсонажи с чёрным фоном — mix-blend-mode убирает фон, оставляя цветные детали */
-.dark-bg-photo {
-  mix-blend-mode: lighten;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --bg:        #06060f;
@@ -1910,13 +1905,13 @@ html, body {
   width: 80%; height: 60%;
   border-radius: 50%;
   filter: blur(28px);
-  opacity: 0.5;
+  opacity: 0.25;
   z-index: 1;
   animation: aura-pulse 3s ease-in-out infinite;
 }
 @keyframes aura-pulse {
   0%, 100% { opacity: 0.35; transform: scale(1); }
-  50%       { opacity: 0.65; transform: scale(1.12); }
+  50%       { opacity: 0.35; transform: scale(1.06); }
 }
 
 /* астицы — z-index:2 */
@@ -1959,6 +1954,11 @@ html, body {
   object-fit: contain;
   filter: drop-shadow(0 0 10px var(--aura, #fff));
 }
+/* ля NFT с чёрным фоном — lighten убирает чёрный, контент виден */
+.dark-bg-photo {
+  mix-blend-mode: lighten;
+}
+
 
 /* ольцо по краю — z-index:4 */
 .nft-photo-wrap::after {

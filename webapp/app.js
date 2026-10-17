@@ -167,7 +167,7 @@ function nftImgHtml(nft, cls = '') {
   if (nft.isPhoto) {
     const aura = nft.auraColor || '#fbbf24';
     // Яркий насыщенный фон под персонажем
-    const bg = `radial-gradient(ellipse at 50% 70%, ${aura}55 0%, ${aura}22 45%, #080814 100%)`;
+    const bg = nft.darkBg ? '#000' : `radial-gradient(ellipse at 50% 70%, ${aura}55 0%, ${aura}22 45%, #080814 100%)`;
     return `<div class="nft-photo-wrap ${cls}" style="--aura:${aura};background:${bg}">
       <div class="nft-photo-glow" style="background:${aura}"></div>
       <div class="nft-photo-particles">
