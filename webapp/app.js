@@ -122,12 +122,10 @@ function closeModal() {
 
 // ── NFT HELPERS ───────────────────────────────────────
 function nftImgHtml(nft, cls = '') {
-  // Фото-NFT с аурой (plush и тд)
+  // Фото-NFT с аурой (plush и тд) — без фона, картинка сама несёт фон
   if (nft.isPhoto) {
     const aura = nft.auraColor || '#fbbf24';
-    const bg1  = nft.bg1 || '#0a0a14';
-    const bg2  = nft.bg2 || '#04040a';
-    return `<div class="nft-photo-wrap ${cls}" style="--aura:${aura};background:radial-gradient(ellipse at 50% 40%,${bg1},${bg2})">
+    return `<div class="nft-photo-wrap ${cls}" style="--aura:${aura}">
       <div class="nft-photo-glow" style="background:${aura}"></div>
       <div class="nft-photo-particles">
         ${[...Array(8)].map((_,i) => `<div class="nft-particle" style="--i:${i};--c:${aura}"></div>`).join('')}
@@ -148,13 +146,11 @@ function nftPreviewSrc(nft) {
   return nft.img || '';
 }
 
-// Для модалки — квадратная обёртка с аурой
+// Для модалки — квадратная обёртка с аурой, без доп фона
 function nftModalImgHtml(nft) {
   if (nft.isPhoto) {
     const aura = nft.auraColor || '#fbbf24';
-    const bg1  = nft.bg1 || '#0a0a14';
-    const bg2  = nft.bg2 || '#04040a';
-    return `<div class="nft-photo-wrap modal-photo-wrap" style="--aura:${aura};background:radial-gradient(ellipse at 50% 40%,${bg1},${bg2})">
+    return `<div class="nft-photo-wrap modal-photo-wrap" style="--aura:${aura}">
       <div class="nft-photo-glow" style="background:${aura}"></div>
       <div class="nft-photo-particles">
         ${[...Array(8)].map((_,i) => `<div class="nft-particle" style="--i:${i};--c:${aura}"></div>`).join('')}

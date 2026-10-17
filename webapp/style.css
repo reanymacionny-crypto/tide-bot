@@ -20,7 +20,7 @@
   --common:    #6b7280;
   --rare:      #3b82f6;
   --epic:      #a855f7;
-  --legendary: #f59e0b;
+  --legendary: ауммм#f5bd03;
   --nav-h:     68px;
 }
 
@@ -1870,6 +1870,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
 }
 
 /* Свечение сзади */
@@ -1924,9 +1925,9 @@ html, body {
 .nft-photo-img {
   position: relative;
   z-index: 3;
-  width: 82%;
-  height: 82%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   filter: drop-shadow(0 0 12px var(--aura, #fff));
 }
 
