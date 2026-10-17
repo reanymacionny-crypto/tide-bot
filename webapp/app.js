@@ -47,6 +47,24 @@ async function apiPost(path, body) {
 }
 
 async function loadUser() {
+  // Мгновенно показываем кэш из localStorage
+  try {
+    const cached = localStorage.getItem('tide_state');
+    if (cached) {
+      const c = JSON.parse(cached);
+      state.balance    = c.balance    || 0;
+      state.inventory  = c.inventory  || [];
+      state.listings   = c.listings   || [];
+      state.isAdmin    = c.isAdmin    || false;
+      state.myUsername = c.myUsername || '';
+      state.stock      = c.stock      || [];
+      const adminBtn = document.getElementById('nav-admin-btn');
+      if (adminBtn) adminBtn.style.display = state.isAdmin ? 'flex' : 'none';
+      renderHome(); renderInventory(); renderUpgrade();
+    }
+  } catch {}
+
+  // Синхронизируем с сервером
   try {
     const data = await apiGet('/me');
     state.balance    = data.tcoins    || 0;
@@ -56,23 +74,46 @@ async function loadUser() {
     state.myUsername = data.username  || '';
     state.stock      = data.stock     || [];
   } catch {
-    state.balance = 0; state.inventory = []; state.listings = [];
-    state.isAdmin = false; state.stock = [];
+    // Оставляем кэш
   }
 
-  // Загружаем публичные листинги других людей
+  // Публичные листинги
   try {
     const pl = await apiGet('/listings');
     state.publicListings = pl.listings || [];
   } catch { state.publicListings = []; }
 
+  // Сохраняем актуальное состояние
+  try {
+    localStorage.setItem('tide_state', JSON.stringify({
+      balance:    state.balance,
+      inventory:  state.inventory,
+      listings:   state.listings,
+      isAdmin:    state.isAdmin,
+      myUsername: state.myUsername,
+      stock:      state.stock,
+    }));
+  } catch {}
+
   const adminBtn = document.getElementById('nav-admin-btn');
   if (adminBtn) adminBtn.style.display = state.isAdmin ? 'flex' : 'none';
-
   renderHome(); renderInventory(); renderUpgrade();
 }
 
 // ── SCREEN ────────────────────────────────────────────
+function saveState() {
+  try {
+    localStorage.setItem('tide_state', JSON.stringify({
+      balance:    state.balance,
+      inventory:  state.inventory,
+      listings:   state.listings,
+      isAdmin:    state.isAdmin,
+      myUsername: state.myUsername,
+      stock:      state.stock,
+    }));
+  } catch {}
+}
+
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
