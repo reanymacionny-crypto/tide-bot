@@ -234,7 +234,58 @@ async def api_buy_stock(request):
     stock = await get_stock()
     return web.json_response({'stock': stock})
 
-# ── /api/deposit/invoice — создать счёт Stars ────────────────
+# ── /api/withdraw_request — запросить вывод ──────────────────
+async def api_withdraw_request(request):
+    uid = get_user_id(request)
+    if not uid:
+        return web.json_response({'error': 'Unauthorized'}, status=401)
+    data   = await request.json()
+    inv_id = int(data.get('inv_id', 0))
+    item   = await get_inv_item(inv_id, uid)
+    if not item:
+        return web.json_response({'error': 'NFT не найден'})
+    # Помечаем в БД как pending_withdraw
+    async with __import__('aiosqlite').connect('tide_bot.db') as db:
+        await db.execute(
+            "UPDATE inventory SET pending_withdraw=1 WHERE id=? AND user_id=?",
+            (inv_id, uid)
+        )
+        await db.commit()
+    # Уведомляем admin
+    try:
+        from nfts import get_nft
+        nft = get_nft(item['nft_id'])
+        bot_token = BOT_TOKEN
+        import aiohttp as ah
+        async with ah.ClientSession() as sess:
+            await sess.post(
+                f'https://api.telegram.org/bot{bot_token}/sendMessage',
+                json={
+                    'chat_id': ADMIN_ID,
+                    'text': f'⭐ Запрос на вывод!\n\nПользователь: {uid}\nNFT: {nft["name"]} ({nft["rarity"]})\nStars: {nft["sell_price"]} ⭐\n\nОтправь Stars вручную!',
+                    'parse_mode': 'HTML'
+                }
+            )
+    except Exception:
+        pass
+    return web.json_response({'ok': True})
+
+# ── /api/withdraw_cancel — отменить вывод ────────────────────
+async def api_withdraw_cancel(request):
+    uid = get_user_id(request)
+    if not uid:
+        return web.json_response({'error': 'Unauthorized'}, status=401)
+    data   = await request.json()
+    inv_id = int(data.get('inv_id', 0))
+    async with __import__('aiosqlite').connect('tide_bot.db') as db:
+        await db.execute(
+            "UPDATE inventory SET pending_withdraw=0 WHERE id=? AND user_id=?",
+            (inv_id, uid)
+        )
+        await db.commit()
+    return web.json_response({'ok': True})
+
+
 async def api_deposit_invoice(request):
     uid = get_user_id(request)
     if not uid:
@@ -370,6 +421,8 @@ async def create_app():
     app.router.add_post('/api/list',                 api_list)
     app.router.add_post('/api/unlist',               api_unlist)
     app.router.add_get('/api/stock',                 api_stock_get)
+    app.router.add_post('/api/withdraw_request',     api_withdraw_request)
+    app.router.add_post('/api/withdraw_cancel',      api_withdraw_cancel)
     app.router.add_post('/api/deposit/invoice',      api_deposit_invoice)
     # Админ API
     app.router.add_get('/api/admin/stats',           api_admin_stats)

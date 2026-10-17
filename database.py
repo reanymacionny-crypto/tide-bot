@@ -15,10 +15,11 @@ async def init_db():
         """)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS inventory (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER,
-                nft_id      INTEGER,
-                obtained_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id          INTEGER,
+                nft_id           INTEGER,
+                pending_withdraw INTEGER DEFAULT 0,
+                obtained_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         await db.execute("""
