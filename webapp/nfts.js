@@ -531,7 +531,6 @@ var NFTS = {
     desc: "ризрачный плюш из потустороннего мира. Светится в темноте и исчезает на рассвете.",
     isPhoto: true,
     photoSrc: 'plush_ghost.png',
-    darkBg: true,
     auraColor: '#a5f3fc',
     bg1: '#00101a', bg2: '#000a12'
   },
@@ -546,7 +545,6 @@ var NFTS = {
     desc: "едчайший синий цветок с другой планеты. оворят, он исполняет желания.",
     isPhoto: true,
     photoSrc: 'blue_flowers.png',
-    darkBg: true,
     auraColor: '#60a5fa',
     bg1: '#000a1a', bg2: '#00040e'
   },
@@ -562,7 +560,6 @@ var NFTS = {
     isPhoto: true,
     photoSrc: 'plush_myers.png',
     auraColor: '#94a3b8',
-    darkBg: true,
     bg1: '#0a0a0a', bg2: '#050505'
   },
 };

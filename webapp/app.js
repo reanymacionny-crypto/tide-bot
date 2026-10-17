@@ -1626,7 +1626,7 @@ const CASES = {
     name: 'Nightmare Case',
     price: 3500,
     color: '#a855f7',
-    img: 'nightmare_case.jpg',
+    img: 'nightmare_case.png',
     imgFallback: (function() {
       var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
         + '<defs>'
