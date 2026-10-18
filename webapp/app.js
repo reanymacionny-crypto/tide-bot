@@ -1183,8 +1183,6 @@ async function spinWheel() {
   const cost=state.upgradeCost||0;
   if(state.balance<cost){toast(`Нужно ${cost.toLocaleString()} TC`,'error');return;}
   state.spinning=true;
-  state.inventory = state.inventory.filter(i => i.inv_id !== state.upgradeFrom);
-  saveState(); renderInventory();
   const btn=document.getElementById('upg-spin-btn'), res=document.getElementById('wheel-result');
   if(btn) btn.disabled=true;
   if(res){res.textContent='';res.className='wheel-result';}
