@@ -351,7 +351,7 @@ function openStockModal(stockId) {
     ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
-    <div class="modal-desc">${n.desc}</div>
+
     <div class="seller-badge">📦 Продавец: <b>${sellerName}</b></div>
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val">${s.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
@@ -471,7 +471,7 @@ function openUserListingModal(listingId) {
     ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
-    <div class="modal-desc">${n.desc}</div>
+
     <div class="seller-badge">👤 Продавец: <b>${seller}</b></div>
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val">${l.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
@@ -509,7 +509,7 @@ function openNftModal(id) {
     ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
-    <div class="modal-desc">${n.desc}</div>
+
     <div class="seller-badge">🏪 Продавец: <b>TIDE BOT</b></div>
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val">${n.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
@@ -600,7 +600,7 @@ function openInvModal(invId, nftId) {
     ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
-    <div class="modal-desc">${n.desc}</div>
+
     <div class="stat-row">
       <div class="stat-box"><div class="stat-val">${n.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
     </div>
@@ -912,7 +912,7 @@ function renderUpgrade() {
               const sel = state.upgradeFrom === item.inv_id;
               return `<div class="upg-my-card ${sel?'selected':''} ${isPending?'upg-locked':''}"
                 onclick="${isPending?`toast('NFT на выводе','error')`:`selectUpgFrom(${item.inv_id},${item.nft_id})`}">
-                <img src="${n.img}" loading="lazy">
+                ${nftImgHtml(n)}
                 <div class="upg-my-name">${n.name}</div>
                 <div class="upg-my-price">${isPending ? '⏳ Вывод' : n.price.toLocaleString()+' TC'}</div>
               </div>`;
