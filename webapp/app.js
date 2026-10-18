@@ -2012,50 +2012,6 @@ function closeCaseOverlay() {
     if (reel) { reel.style.transition = 'none'; reel.style.transform = 'translateX(0)'; }
   }
 }
-}
-async function startCaseOpen(caseId) {
-  const c = CASES[caseId];
-  if (caseOpening) return;
-  if (state.balance < c.price) { toast('Недостаточно T Coins', 'error'); return; }
-
-  closeModal();
-  caseOpening = true;
-  state.balance -= c.price;
-  renderHome();
-
-  // Определяем выигрыш на сервере (или локально)
-  let wonItem = null;
-  try {
-    const res = await apiPost('/open_case', { case_id: caseId });
-    console.log('[CASE] server response:', JSON.stringify(res));
-    if (res.ok) {
-      console.log('[CASE] server ok, nft_id:', res.nft_id, 'found:', !!wonItem);
-      wonItem = c.items.find(i => i.nft_id === res.nft_id) || (NFTS[res.nft_id] ? { nft_id: res.nft_id, label: NFTS[res.nft_id].name, rarity: NFTS[res.nft_id].rarity, price: NFTS[res.nft_id].price } : null);
-      state.balance   = res.balance;
-      state.inventory = res.inventory;
-      saveState(); renderHome(); renderInventory();
-    }
-  } catch {}
-
-  // Если сервер недоступен — считаем локально по шансам
-  // сли сервер недоступен — считаем локально накопительным методом
-  if (!wonItem) {
-    const total = c.items.reduce((s, i) => s + i.chance, 0);
-    const rand = Math.random() * total;
-    let cumulative = 0;
-    for (const item of c.items) {
-      cumulative += item.chance;
-      if (rand <= cumulative) { wonItem = item; break; }
-    }
-    if (!wonItem) wonItem = c.items[c.items.length - 1];
-    state.inventory.push({ inv_id: Date.now(), nft_id: wonItem.nft_id });
-    saveState(); renderHome(); renderInventory();
-  }
-
-  // Запускаем анимацию
-  playCaseAnimation(c, wonItem);
-}
-
 function playCaseAnimation(c, wonItem) {
   const overlay = document.getElementById('case-open-overlay');
   const reel    = document.getElementById('case-reel');
