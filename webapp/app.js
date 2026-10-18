@@ -1190,6 +1190,7 @@ async function spinWheel() {
   try {
     const r=await apiPost('/upgrade',{inv_id:state.upgradeFrom,to_id:state.upgradeTo,chance:state.upgradeChance,cost:state.upgradeBet||0});
     won=r.ok===true;
+    console.log('[UPG] server:', JSON.stringify({ok:r.ok, inv_count:r.inventory?.length, balance:r.balance}));
     if(r.balance!==undefined) state.balance=r.balance;
     if(r.inventory) state.inventory=r.inventory;
     saveState(); renderHome(); renderInventory();
