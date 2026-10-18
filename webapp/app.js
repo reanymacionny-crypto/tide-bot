@@ -870,18 +870,15 @@ function calcUpgradeTarget() {
   if (!fromNft) return { targetId: null, targetNft: null, chance: 0 };
   const bet = state.upgradeBet || 0;
 
-  // Определяем множитель и базовый шанс по ставке
-  // Без: +15% цена, 75% | X2: x2, 50% | X3: x3, 35% | X4: x4, 20% | X5: x5, 10%
-  let mult, baseChance;
-  if      (bet >= fromNft.price * 4) { mult = 5;    baseChance = 10; }
-  else if (bet >= fromNft.price * 3) { mult = 4;    baseChance = 20; }
-  else if (bet >= fromNft.price * 2) { mult = 3;    baseChance = 35; }
-  else if (bet >= fromNft.price)     { mult = 2;    baseChance = 50; }
-  else                               { mult = 1.15; baseChance = 75; }
+  // Строго фиксированные шансы по ставке
+  let mult, chance;
+  if      (bet >= fromNft.price * 4) { mult = 5; chance = 10; }
+  else if (bet >= fromNft.price * 3) { mult = 4; chance = 20; }
+  else if (bet >= fromNft.price * 2) { mult = 3; chance = 35; }
+  else if (bet >= fromNft.price)     { mult = 2; chance = 50; }
+  else                               { mult = 1.15; chance = 75; }
 
   const targetPrice = fromNft.price * mult;
-
-  // Ищем ближайший NFT к целевой цене (дороже исходного)
   let bestId = null, bestNft = null, bestDiff = Infinity;
   Object.entries(NFTS).forEach(([id, n]) => {
     if (parseInt(id) === state.upgradeFromId) return;
@@ -889,15 +886,6 @@ function calcUpgradeTarget() {
     const diff = Math.abs(n.price - targetPrice);
     if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
   });
-
-  // Шанс падает пропорционально отклонению найденного NFT от целевой цены
-  let chance = baseChance;
-  if (bestNft && targetPrice > 0) {
-    const deviation = Math.abs(bestNft.price - targetPrice) / targetPrice;
-    // Каждые 10% отклонения снижают шанс на 5 пп, максимум -30 пп
-    const penalty = Math.min(Math.round(deviation * 50), 30);
-    chance = Math.max(chance - penalty, 3);
-  }
   return { targetId: bestId, targetNft: bestNft, chance };
 }
 
@@ -1515,7 +1503,7 @@ const CASES = {
     name: 'Poison Case',
     price: 500,
     color: '#22c55e',
-    img: 'poison_case.jpg',           // кладёшь файл в webapp/poison_case.jpg
+    img: 'poison_case.png',
     imgFallback: (function() {
       var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
         + '<defs>'
@@ -1552,7 +1540,7 @@ const CASES = {
     name: 'Hellfire Case',
     price: 1200,
     color: '#ef4444',
-    img: 'hellfire_case.jpg',         // кладёшь файл в webapp/hellfire_case.jpg
+    img: 'hellfire_case.png',
     imgFallback: (function() {
       var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
         + '<defs>'
@@ -1598,7 +1586,7 @@ const CASES = {
     name: 'Dota 2 Case',
     price: 2500,
     color: '#c084fc',
-    img: 'dota2_case.jpg',
+    img: 'dota2_case.png',
     imgFallback: (function() {
       var s = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">'
         + '<defs>'
@@ -1788,7 +1776,7 @@ async function startCaseOpen(caseId) {
   try {
     const res = await apiPost('/open_case', { case_id: caseId });
     if (res.ok) {
-      wonItem = c.items.find(i => i.nft_id === res.nft_id);
+      wonItem = c.items.find(i => i.nft_id === res.nft_id) || (NFTS[res.nft_id] ? { nft_id: res.nft_id, label: NFTS[res.nft_id].name, rarity: NFTS[res.nft_id].rarity, price: NFTS[res.nft_id].price } : null);
       state.balance   = res.balance;
       state.inventory = res.inventory;
       saveState();

@@ -1760,30 +1760,31 @@ html, body {
   position: relative;
   isolation: isolate;
 }
-/* свечение внутри картинки снизу */
-.case-grid-img-wrap::after {
+/* свечение С кейса — z-index:-1 гарантирует что за картинкой */
+.case-grid-img-wrap::before {
   content: "";
   position: absolute;
-  bottom: 0; left: 10%; right: 10%;
-  height: 40%;
-  background: radial-gradient(ellipse at 50% 100%,
-    color-mix(in srgb, var(--cc, var(--gold)) 35%, transparent) 0%,
+  inset: 15%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 50%,
+    color-mix(in srgb, var(--cc, var(--gold)) 60%, transparent) 0%,
     transparent 70%);
   pointer-events: none;
   z-index: 0;
+  filter: blur(16px);
   animation: case-glow-pulse 2.5s ease-in-out infinite;
 }
 @keyframes case-glow-pulse {
-  0%, 100% { opacity: 0.7; }
-  50%       { opacity: 1.0; }
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.1); }
 }
 .case-grid-img {
   width: 88%;
   height: 88%;
   object-fit: contain;
   position: relative;
-  z-index: 2;
-  mix-blend-mode: lighten;
+  z-index: 1;
+}
 }
 .case-grid-name  { font-size: 12px; font-weight: 800; color: var(--text); padding: 8px 10px 2px; }
 .case-grid-price { font-size: 13px; font-weight: 900; padding: 0 10px 10px; }
