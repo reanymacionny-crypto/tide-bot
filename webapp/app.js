@@ -1194,13 +1194,13 @@ async function spinWheel() {
     won=r.ok===true;
     if(r.balance!==undefined) state.balance=r.balance;
     if(r.inventory) state.inventory=r.inventory;
-  } catch {
     saveState(); renderHome(); renderInventory();
+  } catch {
     won=Math.random()*100<(state.upgradeChance||50);
-    // Списываем ставку локально
     if (state.upgradeBet > 0) state.balance -= state.upgradeBet;
     state.inventory=state.inventory.filter(i=>i.inv_id!==state.upgradeFrom);
     if(won) state.inventory.push({inv_id:Date.now(),nft_id:state.upgradeTo});
+    saveState(); renderHome(); renderInventory();
   }
 
   const chance=(state.upgradeChance||50)/100;
@@ -1780,7 +1780,7 @@ async function startCaseOpen(caseId) {
       wonItem = c.items.find(i => i.nft_id === res.nft_id) || (NFTS[res.nft_id] ? { nft_id: res.nft_id, label: NFTS[res.nft_id].name, rarity: NFTS[res.nft_id].rarity, price: NFTS[res.nft_id].price } : null);
       state.balance   = res.balance;
       state.inventory = res.inventory;
-      saveState();
+      saveState(); renderHome(); renderInventory();
     }
   } catch {}
 
@@ -1854,8 +1854,8 @@ function playCaseAnimation(c, wonItem) {
   // Позиционируем рулетку так чтобы WIN_POS оказался по центру
   const reelWrapW = document.querySelector('.case-reel-wrap').offsetWidth || 320;
   const centerOffset = reelWrapW / 2 - ITEM_W / 2;
-  const targetX = -(WIN_POS * ITEM_W - centerOffset);
-
+  const jitter = (Math.random() - 0.5) * 50; // случайный сдвиг ±25px внутри предмета
+  const targetX = -(WIN_POS * ITEM_W - centerOffset) + jitter;
   // Анимация
   reel.style.transition = 'none';
   reel.style.transform  = 'translateX(0)';
