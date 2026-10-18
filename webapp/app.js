@@ -1238,6 +1238,7 @@ async function spinWheel() {
     }
     state.upgradeFrom=null;state.upgradeFromId=null;state.upgradeTo=null;
     renderHome();renderInventory();
+    loadUser(); // обновить инвентарь с сервера
     setTimeout(()=>renderUpgrade(),2200);
   }
   requestAnimationFrame(anim);
