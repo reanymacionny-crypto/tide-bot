@@ -870,52 +870,26 @@ function calcUpgradeTarget() {
   if (!fromNft) return { targetId: null, targetNft: null, chance: 0 };
   const bet = state.upgradeBet || 0;
 
-  // аждый множитель ищет NFT в своём ценовом диапазоне
-  // ез: min > fromNft.price (следующий дороже)
-  // X2:  min > fromNft.price * 1.5 (в 1.5-2.5x)
-  // X3:  min > fromNft.price * 2.5 (в 2.5-3.5x)
-  // X4:  min > fromNft.price * 3.5 (в 3.5-4.5x)
-  // X5:  min > fromNft.price * 4.5 (больше 4.5x)
-  let minMult, maxMult, baseChance;
-  if      (bet >= fromNft.price * 4) { minMult = 4.5; maxMult = Infinity; baseChance = 10; }
-  else if (bet >= fromNft.price * 3) { minMult = 3.5; maxMult = 4.5;     baseChance = 20; }
-  else if (bet >= fromNft.price * 2) { minMult = 2.5; maxMult = 3.5;     baseChance = 35; }
-  else if (bet >= fromNft.price)     { minMult = 1.5; maxMult = 2.5;     baseChance = 50; }
-  else                               { minMult = 1.0; maxMult = 1.5;     baseChance = 75; }
+  // Шансы СЫ — не зависят от того какой NFT найден
+  let minMult, baseChance;
+  if      (bet >= fromNft.price * 4) { minMult = 4.0; baseChance = 10; }
+  else if (bet >= fromNft.price * 3) { minMult = 3.0; baseChance = 20; }
+  else if (bet >= fromNft.price * 2) { minMult = 2.0; baseChance = 35; }
+  else if (bet >= fromNft.price)     { minMult = 1.5; baseChance = 50; }
+  else                               { minMult = 1.1; baseChance = 75; }
 
   const minPrice = fromNft.price * minMult;
-  const maxPrice = fromNft.price * maxMult;
 
-  // щем NFT в нужном диапазоне, ближайший к середине диапазона
-  const midPrice = maxMult === Infinity ? minPrice * 1.5 : (minPrice + maxPrice) / 2;
+  // щем ближайший NFT дороже minPrice
   let bestId = null, bestNft = null, bestDiff = Infinity;
   Object.entries(NFTS).forEach(([id, n]) => {
     if (parseInt(id) === state.upgradeFromId) return;
-    if (n.price <= fromNft.price) return;
-    if (n.price < minPrice) return; // ниже диапазона — пропускаем
-    if (maxMult !== Infinity && n.price > maxPrice) return; // выше диапазона — пропускаем
-    const diff = Math.abs(n.price - midPrice);
+    if (n.price < minPrice) return;
+    const diff = n.price - minPrice;
     if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
   });
 
-  // сли в диапазоне ничего нет — берём ближайший дороже minPrice
-  if (!bestNft) {
-    Object.entries(NFTS).forEach(([id, n]) => {
-      if (parseInt(id) === state.upgradeFromId) return;
-      if (n.price < minPrice) return;
-      const diff = n.price - minPrice;
-      if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
-    });
-  }
-
-  // Шанс: если нашли не в диапазоне — уменьшаем пропорционально
-  let chance = baseChance;
-  if (bestNft && bestNft.price > maxPrice && maxMult !== Infinity) {
-    const over = (bestNft.price - maxPrice) / maxPrice;
-    chance = Math.max(Math.round(baseChance * (1 - over * 0.5)), 3);
-  }
-  console.log(`[UPG] from:${fromNft.price} bet:${bet} range:${minPrice.toFixed(0)}-${maxMult===Infinity?"∞":maxPrice.toFixed(0)} found:${bestNft?.name} ${bestNft?.price} chance:${chance}%`);
-  return { targetId: bestId, targetNft: bestNft, chance };
+  return { targetId: bestId, targetNft: bestNft, chance: baseChance };
 }
 
 function renderUpgrade() {

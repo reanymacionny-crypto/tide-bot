@@ -562,4 +562,134 @@ var NFTS = {
     auraColor: '#94a3b8',
     bg1: '#0a0a0a', bg2: '#050505'
   },
+
+  // ════════════════════════════════════════════
+  //  Ы Т Я  (заполнение ценовых диапазонов)
+  // ════════════════════════════════════════════
+
+  // ~320 TC
+  59: { name: "Lucky Clover",    rarity: "Common",    price: 320,   sell: 30,
+    desc: "етырёхлистный клевер на удачу.",
+    img: makeCard('#041a08','#020e04','🍀','#4ade80') },
+
+  // ~420 TC
+  60: { name: "Ghost Pepper",    rarity: "Common",    price: 420,   sell: 38,
+    desc: "Самый острый перец в мире.",
+    img: makeCard('#1a0800','#0e0400','🌶️','#ef4444') },
+
+  // ~550 TC
+  61: { name: "Honey Jar",       rarity: "Common",    price: 550,   sell: 50,
+    desc: "олотистый мёд из заповедного леса.",
+    img: makeCard('#1a1000','#0e0800','🍯','#fbbf24') },
+
+  // ~700 TC
+  62: { name: "Crystal Ball",    rarity: "Common",    price: 700,   sell: 64,
+    desc: "Хрустальный шар предсказателя.",
+    img: makeCard('#080818','#04040e','🔮','#818cf8') },
+
+  // ~900 TC
+  63: { name: "Golden Fish",     rarity: "Common",    price: 900,   sell: 82,
+    desc: "олотая рыбка исполняет желания.",
+    img: makeCard('#1a1000','#0e0800','🐟','#fbbf24') },
+
+  // ~1200 TC
+  64: { name: "Fire Opal",       rarity: "Rare",      price: 1200,  sell: 112,
+    desc: "гненный опал с танцующим пламенем внутри.",
+    img: makeCard('#1a0400','#0e0200','💎','#f97316') },
+
+  // ~1600 TC
+  // (уже есть Lol Pop Rare за 1600)
+
+  // ~2000 TC — пробел между 1900 и 2100
+  // (уже есть Santa Hat Rare за 2100)
+
+  // ~2400 TC
+  65: { name: "Thunder Drum",    rarity: "Rare",      price: 2400,  sell: 225,
+    desc: "арабан грома — каждый удар как молния.",
+    img: makeCard('#0a0820','#050410','🥁','#818cf8') },
+
+  // ~3000 TC
+  66: { name: "Poison Apple",    rarity: "Rare",      price: 3000,  sell: 280,
+    desc: "травленное яблоко из сказки.",
+    img: makeCard('#140418','#0a020e','🍎','#e879f9') },
+
+  // ~4000 TC
+  67: { name: "Sun Stone",       rarity: "Rare",      price: 4000,  sell: 375,
+    desc: "амень солнца хранит тепло миллиона лет.",
+    img: makeCard('#1a0c00','#0e0600','🌟','#f59e0b') },
+
+  // ~6000 TC
+  68: { name: "Dragon Egg",      rarity: "Rare",      price: 6000,  sell: 560,
+    desc: "Яйцо дракона. то вылупится — неизвестно.",
+    img: makeCard('#1a0000','#0e0000','🥚','#ef4444') },
+
+  // ~8000 TC
+  69: { name: "Moon Shard",      rarity: "Rare",      price: 8000,  sell: 750,
+    desc: "сколок луны упавший на землю.",
+    img: makeCard('#04041a','#02020e','🌙','#60a5fa') },
+
+  // ~10000 TC
+  70: { name: "Phoenix Feather", rarity: "Rare",      price: 10000, sell: 950,
+    desc: "еро феникса — символ возрождения.",
+    img: makeCard('#1a0800','#0e0400','🪶','#fb923c') },
+
+  // ~15000 TC
+  71: { name: "Mermaid Tear",    rarity: "Legendary", price: 15000, sell: 1580,
+    desc: "Слеза русалки затвердевшая в жемчужину.",
+    img: makeCard('#000a1a','#00050e','🦋','#7dd3fc') },
+
+  // ~20000 TC
+  72: { name: "Dark Matter",     rarity: "Legendary", price: 20000, sell: 2100,
+    desc: "Тёмная материя в стеклянном шаре.",
+    img: makeCard('#04000e','#020008','⚫','#7c3aed') },
+
+  // ~25000 TC
+  73: { name: "Time Crystal",    rarity: "Legendary", price: 25000, sell: 2650,
+    desc: "ристалл времени — содержит застывший момент.",
+    img: makeCard('#000a14','#00050a','⏳','#22d3ee') },
+
+  // ~30000 TC — пробел между 25k и 32k
+  74: { name: "Void Gem",        rarity: "Legendary", price: 30000, sell: 3180,
+    desc: "амень пустоты поглощает свет.",
+    img: makeCard('#000004','#000002','💠','#6366f1') },
+
+  // ~40000 TC — пробел между 38k и 42k
+  75: { name: "Star Fragment",   rarity: "Legendary", price: 40000, sell: 4200,
+    desc: "рагмент звезды упавшей миллион лет назад.",
+    img: makeCard('#060410','#030208','✨','#fde68a') },
+
+  // ~48000 TC — пробел между 46k и 50k
+  76: { name: "Celestial Orb",   rarity: "Legendary", price: 48000, sell: 5050,
+    desc: "ебесная сфера хранит карту всей вселенной.",
+    img: makeCard('#000810','#000408','🌐','#38bdf8') },
+
+  // ~90000 TC — пробел между 85k и 110k
+  77: { name: "Eternity Stone",  rarity: "Legendary", price: 90000, sell: 9500,
+    desc: "амень вечности — никто не знает его возраст.",
+    img: makeCard('#080012','#04000a','🔵','#a78bfa') },
+
+  // ~150000 TC — пробел после 120k
+  78: { name: "Soul Gem",        rarity: "Legendary", price: 150000, sell: 15800,
+    desc: "рагоценный камень содержащий древнюю душу.",
+    img: makeCard('#0a0014','#05000a','💜','#c084fc') },
+
+  // ~300000 TC
+  79: { name: "Nexus Core",      rarity: "Legendary", price: 300000, sell: 31500,
+    desc: "Ядро нексуса — источник всей магии мира.",
+    img: makeCard('#000a10','#000508','🔷','#0ea5e9') },
+
+  // ~500000 TC
+  80: { name: "Omega Shard",     rarity: "Legendary", price: 500000, sell: 52500,
+    desc: "сколок меги — последний артефакт погибшей цивилизации.",
+    img: makeCard('#080808','#040404','⚡','#fbbf24') },
+
+  // ~800000 TC
+  81: { name: "Genesis Relic",   rarity: "Legendary", price: 800000, sell: 84000,
+    desc: "еликвия енезиса — была создана в начале времён.",
+    img: makeCard('#0a0a00','#050500','🌌','#f59e0b',  ['#fbbf24','#f59e0b','#fde68a']) },
+
+  // ~1200000 TC
+  82: { name: "Infinity Loop",   rarity: "Legendary", price: 1200000, sell: 126000,
+    desc: "етля бесконечности — не имеет начала и конца.",
+    img: makeCard('#060010','#030008','♾️','#818cf8',  ['#818cf8','#6366f1','#a5b4fc']) },
 };
