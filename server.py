@@ -150,9 +150,10 @@ async def api_upgrade(request):
     item = await get_inv_item(inv_id, uid)
     if not item:
         return web.json_response({'error': 'NFT не найден'})
-    to_nft = get_nft(to_id)
-    if not to_nft:
-        return web.json_response({'error': 'Целевой NFT не найден'})
+    to_nft = get_nft(to_id)  # может быть None для новых NFT — это нормально
+    # не блокируем апгрейд если NFT не в nfts.py
+    if to_id <= 0:
+        return web.json_response({'error': 'еверный ID целевого NFT'})
 
     if cost > 0:
         user = await get_user(uid)
