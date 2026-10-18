@@ -978,7 +978,7 @@ function renderUpgrade() {
   const inv = state.inventory;
   // ля мульти — суммируем цены
   const _fromIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0) ? state.upgradeFromIds : (state.upgradeFromId ? [state.upgradeFromId] : []);
-  const _fromNfts = _fromIds.map(id => { const inv = inv.find ? inv.find(i => i.inv_id === id) : null; return inv ? NFTS[inv.nft_id] : null; }).filter(Boolean);
+  const _fromNfts = _fromIds.map(id => { const invItem = state.inventory.find(i => i.inv_id === id); return invItem ? NFTS[invItem.nft_id] : null; }).filter(Boolean);
   const fromNft = _fromNfts.length > 0 ? { price: _fromNfts.reduce((s,n)=>s+n.price,0), name: _fromNfts.map(n=>n.name).join(" + "), rarity: _fromNfts[0].rarity } : NFTS[state.upgradeFromId];
   const bet = state.upgradeBet || 0;
   const { targetId, targetNft, chance } = calcUpgradeTarget();
@@ -1114,7 +1114,6 @@ function toggleUpgFrom(invId, nftId) {
     : null;
   state.upgradeTo = null; state.upgradeChance = 50; state.upgradeBet = 0;
   renderUpgrade();
-}
 }
 
 // Старые функции оставляем пустышками чтобы не сломать spinWheel
@@ -2014,7 +2013,7 @@ function closeCaseOverlay() {
 }
 function playCaseAnimation(c, wonItem) {
   const overlay = document.getElementById('case-open-overlay');
-  const reel    = document.getElementById('case-reel');
+  const reel    = document.getElementById('case-reel-0'); // legacy fallback
   const result  = document.getElementById('case-open-result');
   const title   = document.getElementById('case-open-title');
 
@@ -2113,3 +2112,4 @@ document.addEventListener('DOMContentLoaded', () => {
   renderUpgrade();
   loadUser();
 });
+}
