@@ -869,8 +869,19 @@ function calcUpgradeTarget() {
   const fromNft = NFTS[state.upgradeFromId];
   if (!fromNft) return { targetId: null, targetNft: null, chance: 0 };
   const bet = state.upgradeBet || 0;
-  // Целевая цена = цена моего NFT + ставка * 1.5 (минимум в 1.2 раза дороже)
-  const targetPrice = Math.max(fromNft.price * 1.2, fromNft.price + bet * 1.5);
+
+  // Определяем множитель и базовый шанс по ставке
+  // Без: +15% цена, 75% | X2: x2, 50% | X3: x3, 35% | X4: x4, 20% | X5: x5, 10%
+  let mult, baseChance;
+  if      (bet >= fromNft.price * 4) { mult = 5;    baseChance = 10; }
+  else if (bet >= fromNft.price * 3) { mult = 4;    baseChance = 20; }
+  else if (bet >= fromNft.price * 2) { mult = 3;    baseChance = 35; }
+  else if (bet >= fromNft.price)     { mult = 2;    baseChance = 50; }
+  else                               { mult = 1.15; baseChance = 75; }
+
+  const targetPrice = fromNft.price * mult;
+
+  // Ищем ближайший NFT к целевой цене (дороже исходного)
   let bestId = null, bestNft = null, bestDiff = Infinity;
   Object.entries(NFTS).forEach(([id, n]) => {
     if (parseInt(id) === state.upgradeFromId) return;
@@ -878,13 +889,14 @@ function calcUpgradeTarget() {
     const diff = Math.abs(n.price - targetPrice);
     if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
   });
-  // Шанс: базовый по соотношению цен + бонус от ставки
-  let chance = 50;
-  if (bestNft) {
-    const ratio = fromNft.price / bestNft.price;
-    const betBonus = bestNft.price > 0 ? Math.min(bet / bestNft.price * 40, 20) : 0;
-    chance = Math.round(Math.min(ratio * 100 * 0.8 + betBonus, 75));
-    chance = Math.max(chance, 5);
+
+  // Шанс падает пропорционально отклонению найденного NFT от целевой цены
+  let chance = baseChance;
+  if (bestNft && targetPrice > 0) {
+    const deviation = Math.abs(bestNft.price - targetPrice) / targetPrice;
+    // Каждые 10% отклонения снижают шанс на 5 пп, максимум -30 пп
+    const penalty = Math.min(Math.round(deviation * 50), 30);
+    chance = Math.max(chance - penalty, 3);
   }
   return { targetId: bestId, targetNft: bestNft, chance };
 }
@@ -934,16 +946,19 @@ function renderUpgrade() {
           <!-- Быстрые пресеты X2/X3/X4 -->
           <div class="upg-mult-btns" style="margin-bottom:12px">
             <button class="upg-mult ${bet===0?'active':''}" onclick="onBetChange(0)">
-              Без<span>бесплатно</span>
+              Без<span>75%</span>
             </button>
             <button class="upg-mult ${fromNft && bet===fromNft.price?'active':''}" onclick="onBetChange(${fromNft ? fromNft.price : 0})">
-              X2<span>${fromNft ? fromNft.price.toLocaleString()+' TC' : '—'}</span>
+              X2<span>50%</span>
             </button>
             <button class="upg-mult ${fromNft && bet===fromNft.price*2?'active':''}" onclick="onBetChange(${fromNft ? fromNft.price*2 : 0})">
-              X3<span>${fromNft ? (fromNft.price*2).toLocaleString()+' TC' : '—'}</span>
+              X3<span>35%</span>
             </button>
             <button class="upg-mult ${fromNft && bet===fromNft.price*3?'active':''}" onclick="onBetChange(${fromNft ? fromNft.price*3 : 0})">
-              X4<span>${fromNft ? (fromNft.price*3).toLocaleString()+' TC' : '—'}</span>
+              X4<span>20%</span>
+            </button>
+            <button class="upg-mult ${fromNft && bet===fromNft.price*4?'active':''}" onclick="onBetChange(${fromNft ? fromNft.price*4 : 0})">
+              X5<span>10%</span>
             </button>
           </div>
           <input type="range" class="upg-slider" id="upg-bet-slider"
