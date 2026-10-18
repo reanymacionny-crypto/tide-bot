@@ -765,7 +765,7 @@ async function submitListing() {
     state.listings.push({ id: Date.now(), inv_id: invId, nft_id: nftId, price, status:'active', listed_at: Date.now() });
   }
   state.listSelectedInvId = null; state.listSelectedNftId = null; state.listPrice = '';
-  renderList();
+  saveState(); renderList(); renderInventory(); renderHome();
   toast(`NFT выставлен за ${price.toLocaleString()} TC!`, 'success');
 }
 
@@ -1195,6 +1195,7 @@ async function spinWheel() {
     if(r.balance!==undefined) state.balance=r.balance;
     if(r.inventory) state.inventory=r.inventory;
   } catch {
+    saveState(); renderHome(); renderInventory();
     won=Math.random()*100<(state.upgradeChance||50);
     // Списываем ставку локально
     if (state.upgradeBet > 0) state.balance -= state.upgradeBet;

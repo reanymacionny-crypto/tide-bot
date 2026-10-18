@@ -360,13 +360,14 @@ async def api_open_case(request):
     ok = await spend_tcoins(uid, price, f'Открытие кейса {case_id}')
     if not ok:
         return web.json_response({'error': 'Ошибка списания'})
-    # Выбираем предмет по шансам
+    # ыбираем предмет по шансам (накопительный метод)
     total = sum(i['chance'] for i in items)
     rand  = random.uniform(0, total)
-    won   = items[-1]
+    won   = items[-1]  # дефолт — последний
+    cumulative = 0.0
     for item in items:
-        rand -= item['chance']
-        if rand <= 0:
+        cumulative += item['chance']
+        if rand <= cumulative:
             won = item
             break
     await add_nft_to_inventory(uid, won['nft_id'])
