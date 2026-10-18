@@ -1188,17 +1188,18 @@ async function spinWheel() {
   if(res){res.textContent='';res.className='wheel-result';}
   let won=false;
   try {
-    const r=await apiPost('/upgrade',{inv_id:state.upgradeFrom,to_id:state.upgradeTo,chance:state.upgradeChance,cost:state.upgradeBet||0});
-    won=r.ok===true;
-    console.log('[UPG] server:', JSON.stringify({ok:r.ok, inv_count:r.inventory?.length, balance:r.balance}));
-    if(r.balance!==undefined) state.balance=r.balance;
-    if(r.inventory) state.inventory=r.inventory;
+    const r = await apiPost('/upgrade', {inv_id:state.upgradeFrom, to_id:state.upgradeTo, chance:state.upgradeChance, cost:state.upgradeBet||0});
+    won = r.ok === true;
+    if (r.error) toast(r.error, 'error');
+    if (r.balance !== undefined) state.balance = r.balance;
+    if (r.inventory) state.inventory = r.inventory;
     saveState(); renderHome(); renderInventory();
-  } catch {
-    won=Math.random()*100<(state.upgradeChance||50);
+  } catch(e) {
+    console.log('[UPG catch]', e);
+    won = Math.random() * 100 < (state.upgradeChance || 50);
     if (state.upgradeBet > 0) state.balance -= state.upgradeBet;
-    state.inventory=state.inventory.filter(i=>i.inv_id!==state.upgradeFrom);
-    if(won) state.inventory.push({inv_id:Date.now(),nft_id:state.upgradeTo});
+    state.inventory = state.inventory.filter(i => i.inv_id !== state.upgradeFrom);
+    if (won) state.inventory.push({inv_id: Date.now(), nft_id: state.upgradeTo});
     saveState(); renderHome(); renderInventory();
   }
 
