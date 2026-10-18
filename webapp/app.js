@@ -1,3 +1,87 @@
+async function spinWheel() {
+  if(state.spinning) return;
+  const upgradeIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0) ? state.upgradeFromIds : (state.upgradeFrom ? [state.upgradeFrom] : []);
+  if(!upgradeIds.length || !state.upgradeTo){toast('ыбери NFT!','error');return;}
+  if(state.balance < (state.upgradeCost||0)){toast(`ужно ${(state.upgradeCost||0).toLocaleString()} TC`,'error');return;}
+
+  state.spinning=true;
+  const btn=document.getElementById('upg-spin-btn'), res=document.getElementById('wheel-result');
+  if(btn) btn.disabled=true;
+  if(res){res.textContent='';res.className='wheel-result';}
+  let won=false;
+  try {
+    // ля одного или нескольких NFT — отправляем запросы последовательно
+    let r;
+    if (upgradeIds.length === 1) {
+      r = await apiPost('/upgrade', {inv_id:upgradeIds[0], to_id:state.upgradeTo, chance:state.upgradeChance, cost:state.upgradeBet||0});
+    } else {
+      // тправляем несколько запросов, все NFT списываются
+      let lastR = null;
+      for (const id of upgradeIds) {
+        lastR = await apiPost('/upgrade', {inv_id:id, to_id:state.upgradeTo, chance:99, cost:0}); // списать NFT
+      }
+      // инальный бросок с нужным шансом
+      r = { ok: Math.random() * 100 < state.upgradeChance };
+      if (lastR && lastR.balance !== undefined) r.balance = lastR.balance - (state.upgradeBet||0);
+      if (lastR && lastR.inventory) r.inventory = lastR.inventory;
+      if (r.ok) {
+        const addRes = await apiPost('/upgrade', {inv_id: -1, to_id: state.upgradeTo, chance: 100, cost: state.upgradeBet||0}).catch(()=>null);
+        if (addRes && addRes.balance !== undefined) r.balance = addRes.balance;
+        if (addRes && addRes.inventory) r.inventory = addRes.inventory;
+      } else if (state.upgradeBet > 0) {
+        await apiPost('/spend', {amount: state.upgradeBet}).catch(()=>{});
+      }
+    }
+    won = r.ok === true;
+    if (r.error) toast(r.error, 'error');
+    if (r.balance !== undefined) state.balance = r.balance;
+    if (r.inventory) state.inventory = r.inventory;
+    saveState(); renderHome(); renderInventory();
+  } catch(e) {
+    console.log('[UPG catch]', e);
+    won = Math.random() * 100 < (state.upgradeChance || 50);
+    if (state.upgradeBet > 0) state.balance -= state.upgradeBet;
+    for (const id of upgradeIds) {
+      state.inventory = state.inventory.filter(i => i.inv_id !== id);
+    }
+    if (won) state.inventory.push({inv_id: Date.now(), nft_id: state.upgradeTo});
+    saveState(); renderHome(); renderInventory();
+  }
+
+  const chance=(state.upgradeChance||50)/100;
+  const colorZoneDeg = chance * 360;
+  const fullRots = (4 + Math.floor(Math.random()*3)) * 360;
+  let stopDeg;
+  if (won) {
+    stopDeg = 5 + Math.random() * Math.max(1, colorZoneDeg - 10);
+  } else {
+    const darkSize = 360 - colorZoneDeg;
+    stopDeg = colorZoneDeg + 5 + Math.random() * Math.max(1, darkSize - 10);
+  }
+  const finalDeg = fullRots + stopDeg;
+  const t0 = performance.now(), dur = 4000;
+  const toNft = NFTS[state.upgradeTo];
+
+  function anim(now) {
+    const p = Math.min((now-t0)/dur, 1);
+    const ease = 1 - Math.pow(1-p, 4);
+    drawArrow(ease * finalDeg);
+    if(p<1){requestAnimationFrame(anim);return;}
+    drawArrow(stopDeg);
+    state.spinning=false;
+    if(btn) btn.disabled=false;
+    if(res){
+      res.textContent=won?`🎉 обеда! олучен ${toNft?.name}!`:`💀 еудача... ${upgradeIds.length > 1 ? upgradeIds.length + ' NFT потеряно' : 'NFT потерян'}`;
+      res.className=`wheel-result ${won?'win':'lose'}`;
+      toast(won?'пгрейд успешен!':'е повезло', won?'success':'error');
+    }
+    state.upgradeFrom=null;state.upgradeFromId=null;state.upgradeTo=null;state.upgradeFromIds=[];
+    renderHome();renderInventory();
+    loadUser();
+    setTimeout(()=>renderUpgrade(),2200);
+  }
+  requestAnimationFrame(anim);
+}
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
@@ -15,6 +99,7 @@ let state = {
   spinning: false,
   upgradeFrom: null,
   upgradeFromId: null,
+  upgradeFromIds: [],
   upgradeTo: null,
   upgradeChance: 50,
   upgradeCost: 0,
@@ -859,8 +944,11 @@ async function depositStars(stars) {
 // Слайдер от 0 до баланса. Ставка списывается при победе (или проигрыше — на выбор).
 
 function calcUpgradeTarget() {
-  const fromNft = NFTS[state.upgradeFromId];
-  if (!fromNft) return { targetId: null, targetNft: null, chance: 0 };
+  const fromIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0) ? state.upgradeFromIds : (state.upgradeFromId ? [state.upgradeFromId] : []);
+  if (!fromIds.length) return { targetId: null, targetNft: null, chance: 0 };
+  const fromNfts = fromIds.map(id => { const inv = state.inventory.find(i => i.inv_id === id); return inv ? NFTS[inv.nft_id] : null; }).filter(Boolean);
+  if (!fromNfts.length) return { targetId: null, targetNft: null, chance: 0 };
+  const fromNft = { price: fromNfts.reduce((s, n) => s + n.price, 0), name: fromNfts.map(n => n.name).join(" + ") };
   const bet = state.upgradeBet || 0;
 
   // Шансы СЫ — не зависят от того какой NFT найден
@@ -888,7 +976,10 @@ function calcUpgradeTarget() {
 function renderUpgrade() {
   const el  = document.getElementById('screen-upgrade');
   const inv = state.inventory;
-  const fromNft = NFTS[state.upgradeFromId];
+  // ля мульти — суммируем цены
+  const _fromIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0) ? state.upgradeFromIds : (state.upgradeFromId ? [state.upgradeFromId] : []);
+  const _fromNfts = _fromIds.map(id => { const inv = inv.find ? inv.find(i => i.inv_id === id) : null; return inv ? NFTS[inv.nft_id] : null; }).filter(Boolean);
+  const fromNft = _fromNfts.length > 0 ? { price: _fromNfts.reduce((s,n)=>s+n.price,0), name: _fromNfts.map(n=>n.name).join(" + "), rarity: _fromNfts[0].rarity } : NFTS[state.upgradeFromId];
   const bet = state.upgradeBet || 0;
   const { targetId, targetNft, chance } = calcUpgradeTarget();
   state.upgradeTo     = targetId;
@@ -909,9 +1000,9 @@ function renderUpgrade() {
           : inv.map(item => {
               const n = NFTS[item.nft_id]; if (!n) return '';
               const isPending = state.pendingWithdraws.includes(item.inv_id);
-              const sel = state.upgradeFrom === item.inv_id;
+              const sel = state.upgradeFromIds && state.upgradeFromIds.includes(item.inv_id);
               return `<div class="upg-my-card ${sel?'selected':''} ${isPending?'upg-locked':''}"
-                onclick="${isPending?`toast('NFT на выводе','error')`:`selectUpgFrom(${item.inv_id},${item.nft_id})`}">
+                onclick="${isPending?`toast('NFT на выводе','error')`:`toggleUpgFrom(${item.inv_id},${item.nft_id})`}">
                 ${nftImgHtml(n)}
                 <div class="upg-my-name">${n.name}</div>
                 <div class="upg-my-price">${isPending ? '⏳ Вывод' : n.price.toLocaleString()+' TC'}</div>
@@ -1002,6 +1093,28 @@ function selectUpgFrom(invId, nftId) {
   state.upgradeChance = 50;
   state.upgradeBet    = 0;
   renderUpgrade();
+
+// ереключить выбор NFT для апгрейда (мульти)
+function toggleUpgFrom(invId, nftId) {
+  // роверка на листинг
+  const isListed = state.listings.some(l => l.inv_id === invId && l.status === "active");
+  if (isListed) { toast("NFT на продаже — сними с продажи", "error"); return; }
+  if (!state.upgradeFromIds) state.upgradeFromIds = [];
+  const idx = state.upgradeFromIds.indexOf(invId);
+  if (idx >= 0) {
+    state.upgradeFromIds.splice(idx, 1);
+  } else {
+    if (state.upgradeFromIds.length >= 3) { toast("аксимум 3 NFT", "error"); return; }
+    state.upgradeFromIds.push(invId);
+  }
+  // upgradeFrom = первый выбранный (для совместимости)
+  state.upgradeFrom   = state.upgradeFromIds[0] || null;
+  state.upgradeFromId = state.upgradeFromIds[0]
+    ? (state.inventory.find(i => i.inv_id === state.upgradeFromIds[0])?.nft_id || null)
+    : null;
+  state.upgradeTo = null; state.upgradeChance = 50; state.upgradeBet = 0;
+  renderUpgrade();
+}
 }
 
 // Старые функции оставляем пустышками чтобы не сломать spinWheel
@@ -1688,10 +1801,24 @@ function renderCases() {
       <div class="case-detail-price">${c.price.toLocaleString()} TC</div>
 
       <div style="padding:0 16px;margin-bottom:16px">
-        <button class="btn-primary" onclick="openCaseModal('${c.id}')"
-          style="background:linear-gradient(135deg,${c.color}dd,${c.color}88);color:#000;font-size:15px">
-          Открыть за ${c.price.toLocaleString()} TC
-        </button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <button class="btn-primary" onclick="startCaseOpen('${c.id}',1)"
+            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
+            x1 — ${c.price.toLocaleString()} TC
+          </button>
+          <button class="btn-primary" onclick="startCaseOpen('${c.id}',2)"
+            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
+            x2 — ${(c.price*2).toLocaleString()} TC
+          </button>
+          <button class="btn-primary" onclick="startCaseOpen('${c.id}',3)"
+            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
+            x3 — ${(c.price*3).toLocaleString()} TC
+          </button>
+          <button class="btn-primary" onclick="startCaseOpen('${c.id}',4)"
+            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
+            x4 — ${(c.price*4).toLocaleString()} TC
+          </button>
+        </div>
       </div>
 
       <div style="padding:0 16px 8px">
@@ -1760,8 +1887,132 @@ function openCaseModal(caseId) {
   `);
 }
 
-let caseOpening = false;
 
+
+// ткрыть кейс count раз (1-4)
+
+async function startCaseOpen(caseId, count) {
+  count = count || 1;
+  const c = CASES[caseId];
+  if (caseOpening) return;
+  const totalCost = c.price * count;
+  if (state.balance < totalCost) { toast('едостаточно T Coins', 'error'); return; }
+  closeModal();
+  caseOpening = true;
+  state.balance -= totalCost;
+  renderHome();
+
+  const promises = [];
+  for (let i = 0; i < count; i++) {
+    promises.push(
+      apiPost('/open_case', { case_id: caseId }).then(res => {
+        if (res.ok) {
+          if (res.balance !== undefined) state.balance = res.balance;
+          if (res.inventory) state.inventory = res.inventory;
+          return c.items.find(x => x.nft_id === res.nft_id) ||
+            (NFTS[res.nft_id] ? { nft_id: res.nft_id, label: NFTS[res.nft_id].name, rarity: NFTS[res.nft_id].rarity, price: NFTS[res.nft_id].price } : null);
+        }
+        return null;
+      }).catch(() => null)
+    );
+  }
+
+  const results = await Promise.all(promises);
+  const wonItems = results.map((item, idx) => {
+    if (!item) {
+      const total = c.items.reduce((s, x) => s + x.chance, 0);
+      let rand = Math.random() * total, cum = 0, picked = c.items[c.items.length-1];
+      for (const it of c.items) { cum += it.chance; if (rand <= cum) { picked = it; break; } }
+      state.inventory.push({ inv_id: Date.now() + idx, nft_id: picked.nft_id });
+      return picked;
+    }
+    return item;
+  });
+
+  saveState(); renderHome(); renderInventory();
+  playCaseAnimation(c, wonItems);
+}
+
+function playCaseAnimation(c, wonItems) {
+  const overlay = document.getElementById('case-open-overlay');
+  const result  = document.getElementById('case-open-result');
+  const title   = document.getElementById('case-open-title');
+  const count   = wonItems.length;
+
+  overlay.style.display = 'flex';
+  result.innerHTML = '';
+  result.className = 'case-open-result';
+
+  if (title) {
+    title.textContent = c.name.toUpperCase();
+    title.style.color = c.color || '#4ade80';
+    title.style.textShadow = '0 0 20px ' + (c.color || '#4ade80') + '66';
+  }
+
+  for (let i = 0; i < 4; i++) {
+    const wrap = document.getElementById('case-reel-wrap-' + i);
+    if (wrap) wrap.style.display = i < count ? 'block' : 'none';
+  }
+
+  const ITEM_W = 80;
+  const reelWrapW = document.querySelector('.case-reel-wrap').offsetWidth || 320;
+  const WIN_POS = 32;
+  const targetX = -(WIN_POS * ITEM_W - (reelWrapW / 2 - ITEM_W / 2));
+
+  const animPromises = wonItems.map((wonItem, idx) => new Promise(resolve => {
+    const reel = document.getElementById('case-reel-' + idx);
+    if (!reel) { resolve(); return; }
+
+    const pointer = reel.parentElement.querySelector('.case-reel-pointer');
+    if (pointer) { pointer.style.background = c.color || '#4ade80'; pointer.style.boxShadow = '0 0 12px ' + (c.color||'#4ade80') + 'cc'; }
+
+    const items = [];
+    for (let i = 0; i < 40; i++) {
+      if (i === WIN_POS) { items.push(wonItem); continue; }
+      const tot = c.items.reduce((s, x) => s + x.chance, 0);
+      let r = Math.random() * tot, cu = 0, pk = c.items[0];
+      for (const it of c.items) { cu += it.chance; if (r <= cu) { pk = it; break; } }
+      items.push(pk);
+    }
+
+    reel.innerHTML = items.map(item => {
+      const n = NFTS[item.nft_id];
+      const rc = ({Common:'#22c55e',Rare:'#3b82f6',Legendary:'#f59e0b'})[item.rarity]||'#fff';
+      return '<div class="case-reel-item" style="border-color:' + rc + '20"><img src="' + (n ? nftPreviewSrc(n) : '') + '" style="width:60px;height:60px;object-fit:contain;border-radius:10px"><div style="font-size:9px;font-weight:700;color:' + rc + ';margin-top:4px;text-align:center;white-space:nowrap;overflow:hidden;max-width:70px;text-overflow:ellipsis">' + item.label + '</div></div>';
+    }).join('');
+
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateX(0)';
+    const dur = 4 + idx * 0.3;
+    setTimeout(() => {
+      reel.style.transition = 'transform ' + dur + 's cubic-bezier(0.15,0.85,0.35,1.0)';
+      reel.style.transform = 'translateX(' + targetX + 'px)';
+      setTimeout(resolve, dur * 1000 + 300);
+    }, 80 + idx * 150);
+  }));
+
+  Promise.all(animPromises).then(() => {
+    const rc = (r) => ({Common:'#22c55e',Rare:'#3b82f6',Legendary:'#f59e0b'})[r]||'#fff';
+    result.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px">' +
+      wonItems.map(item => {
+        const n = NFTS[item.nft_id];
+        return '<div class="case-result-card" style="border-color:' + rc(item.rarity) + ';min-width:110px;flex:1"><img src="' + (n ? nftPreviewSrc(n) : '') + '" style="width:56px;height:56px;object-fit:contain;border-radius:10px;margin-bottom:6px"><div style="font-size:12px;font-weight:900;color:var(--text)">' + item.label + '</div><div style="font-size:10px;font-weight:700;color:' + rc(item.rarity) + ';margin:2px 0">' + item.rarity + '</div><div style="font-size:11px;color:var(--gold)">' + item.price.toLocaleString() + ' TC</div></div>';
+      }).join('') + '</div><button class="btn-primary" style="margin-top:8px;width:100%" onclick="closeCaseOverlay()">абрать' + (wonItems.length > 1 ? ' всё' : '') + '</button>';
+    result.className = 'case-open-result visible';
+    toast('ыпало: ' + wonItems.map(i => i.label).join(', ') + '!', 'success');
+    caseOpening = false;
+    renderHome(); renderInventory();
+  });
+}
+
+function closeCaseOverlay() {
+  document.getElementById('case-open-overlay').style.display = 'none';
+  for (let i = 0; i < 4; i++) {
+    const reel = document.getElementById('case-reel-' + i);
+    if (reel) { reel.style.transition = 'none'; reel.style.transform = 'translateX(0)'; }
+  }
+}
+}
 async function startCaseOpen(caseId) {
   const c = CASES[caseId];
   if (caseOpening) return;

@@ -1560,6 +1560,18 @@ html, body {
 }
 
 /* Рулетка */
+/* онтейнер для нескольких лент */
+#case-reels-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+#case-reels-container::-webkit-scrollbar { display: none; }
+
 .case-reel-wrap {
   width: 100%;
   max-width: 440px;
