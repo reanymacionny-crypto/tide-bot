@@ -1790,7 +1790,9 @@ async function startCaseOpen(caseId) {
   let wonItem = null;
   try {
     const res = await apiPost('/open_case', { case_id: caseId });
+    console.log('[CASE] server response:', JSON.stringify(res));
     if (res.ok) {
+      console.log('[CASE] server ok, nft_id:', res.nft_id, 'found:', !!wonItem);
       wonItem = c.items.find(i => i.nft_id === res.nft_id) || (NFTS[res.nft_id] ? { nft_id: res.nft_id, label: NFTS[res.nft_id].name, rarity: NFTS[res.nft_id].rarity, price: NFTS[res.nft_id].price } : null);
       state.balance   = res.balance;
       state.inventory = res.inventory;
