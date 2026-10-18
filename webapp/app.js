@@ -1,4 +1,4 @@
-async function spinWheel() {
+﻿async function spinWheel() {
   if(state.spinning) return;
   const upgradeIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0) ? state.upgradeFromIds : (state.upgradeFrom ? [state.upgradeFrom] : []);
   if(!upgradeIds.length || !state.upgradeTo){toast('ыбери NFT!','error');return;}
