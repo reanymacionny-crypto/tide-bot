@@ -870,15 +870,17 @@ function calcUpgradeTarget() {
   if (!fromNft) return { targetId: null, targetNft: null, chance: 0 };
   const bet = state.upgradeBet || 0;
 
-  // Строго фиксированные шансы по ставке
-  let mult, chance;
-  if      (bet >= fromNft.price * 4) { mult = 5; chance = 10; }
-  else if (bet >= fromNft.price * 3) { mult = 4; chance = 20; }
-  else if (bet >= fromNft.price * 2) { mult = 3; chance = 35; }
-  else if (bet >= fromNft.price)     { mult = 2; chance = 50; }
-  else                               { mult = 1.15; chance = 75; }
+  // ножитель и базовый шанс
+  let mult, baseChance;
+  if      (bet >= fromNft.price * 4) { mult = 5;    baseChance = 10; }
+  else if (bet >= fromNft.price * 3) { mult = 4;    baseChance = 20; }
+  else if (bet >= fromNft.price * 2) { mult = 3;    baseChance = 35; }
+  else if (bet >= fromNft.price)     { mult = 2;    baseChance = 50; }
+  else                               { mult = 1.15; baseChance = 75; }
 
   const targetPrice = fromNft.price * mult;
+
+  // аходим ближайший NFT дороже исходного
   let bestId = null, bestNft = null, bestDiff = Infinity;
   Object.entries(NFTS).forEach(([id, n]) => {
     if (parseInt(id) === state.upgradeFromId) return;
@@ -886,6 +888,18 @@ function calcUpgradeTarget() {
     const diff = Math.abs(n.price - targetPrice);
     if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
   });
+
+  // Шанс уменьшается пропорционально отклонению от целевой цены
+  // ример: цель 345, нашли 370 → отклонение (370-345)/345 = 7.2% → шанс 75*(1-0.072) = 69.6%
+  let chance = baseChance;
+  if (bestNft) {
+    const overPrice = (bestNft.price - targetPrice) / targetPrice;
+    if (overPrice > 0) {
+      chance = Math.round(baseChance * (1 - overPrice));
+      chance = Math.max(chance, 3);
+    }
+  }
+  console.log('[UPGRADE] from:', fromNft.name, fromNft.price, 'TC | mult:', mult, '| target:', targetPrice, '| found:', bestNft?.name, bestNft?.price, '| chance:', chance+'%');
   return { targetId: bestId, targetNft: bestNft, chance };
 }
 
@@ -1785,15 +1799,18 @@ async function startCaseOpen(caseId) {
   } catch {}
 
   // Если сервер недоступен — считаем локально по шансам
+  // сли сервер недоступен — считаем локально накопительным методом
   if (!wonItem) {
     const total = c.items.reduce((s, i) => s + i.chance, 0);
-    let rand = Math.random() * total;
+    const rand = Math.random() * total;
+    let cumulative = 0;
     for (const item of c.items) {
-      rand -= item.chance;
-      if (rand <= 0) { wonItem = item; break; }
+      cumulative += item.chance;
+      if (rand <= cumulative) { wonItem = item; break; }
     }
-    if (!wonItem) wonItem = c.items[0];
+    if (!wonItem) wonItem = c.items[c.items.length - 1];
     state.inventory.push({ inv_id: Date.now(), nft_id: wonItem.nft_id });
+    saveState(); renderHome(); renderInventory();
   }
 
   // Запускаем анимацию
