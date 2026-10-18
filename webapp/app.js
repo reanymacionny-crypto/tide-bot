@@ -116,6 +116,7 @@ function saveState() {
 
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (state.spinning) { toast('Подожди результат апгрейда!', 'error'); return; }
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`screen-${name}`).classList.add('active');
   const btn = document.querySelector(`[data-screen="${name}"]`);
@@ -409,12 +410,6 @@ function renderMarket() {
     if (rarityOk && searchOk) allItems.push({ type:'user_listing', l, n });
   });
 
-  // 3. Обычный каталог
-  Object.entries(NFTS).forEach(([id, n]) => {
-    const rarityOk = state.marketFilter === 'All' || n.rarity === state.marketFilter;
-    const searchOk = !q || n.name.toLowerCase().includes(q);
-    if (rarityOk && searchOk) allItems.push({ type:'nft', id, n });
-  });
 
   el.innerHTML = `
     <div class="screen-header">Маркет</div>
@@ -1188,6 +1183,8 @@ async function spinWheel() {
   const cost=state.upgradeCost||0;
   if(state.balance<cost){toast(`Нужно ${cost.toLocaleString()} TC`,'error');return;}
   state.spinning=true;
+  state.inventory = state.inventory.filter(i => i.inv_id !== state.upgradeFrom);
+  saveState(); renderInventory();
   const btn=document.getElementById('upg-spin-btn'), res=document.getElementById('wheel-result');
   if(btn) btn.disabled=true;
   if(res){res.textContent='';res.className='wheel-result';}
