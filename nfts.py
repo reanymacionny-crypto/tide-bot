@@ -91,6 +91,7 @@ NFTS = {
     80: {"name":"Omega Shard",     "rarity":"Legendary", "price":500000, "sell_price":52500,"upgrade_to":None,"upgrade_cost":0, "image_url":"", "description":"сколок меги — последний артефакт."},
     81: {"name":"Genesis Relic",   "rarity":"Legendary", "price":800000, "sell_price":84000,"upgrade_to":None,"upgrade_cost":0, "image_url":"", "description":"еликвия енезиса — была создана в начале времён."},
     82: {"name":"Infinity Loop",   "rarity":"Legendary", "price":1200000,"sell_price":126000,"upgrade_to":None,"upgrade_cost":0,"image_url":"", "description":"етля бесконечности — не имеет начала и конца."},
+    83: {"name":"Plush Jason","rarity":"Legendary","price":2800000,"sell_price":295000,"upgrade_to":None,"upgrade_cost":0,"image_url":"","description":"жейсон урхис в плюшевом виде. ятница 13-е у тебя в коллекции."},
 }
 
 RARITY_COLORS = {

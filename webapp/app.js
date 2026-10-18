@@ -348,7 +348,7 @@ function openStockModal(stockId) {
   if (!n) return;
   const sellerName = s.seller_name === 'STOCK' ? 'STOCK' : s.seller_name;
   openModal(`
-    <div class="modal-nft-wrap"><img src="${n.img}" class="modal-nft-img"></div>
+    ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
     <div class="modal-desc">${n.desc}</div>
@@ -468,7 +468,7 @@ function openUserListingModal(listingId) {
   const n = NFTS[l.nft_id]; if (!n) return;
   const seller = l.username ? '@' + l.username : 'ID:' + l.user_id;
   openModal(`
-    <div class="modal-nft-wrap"><img src="${n.img}" class="modal-nft-img"></div>
+    ${nftModalImgHtml(n)}
     <div class="modal-title">${n.name}</div>
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
     <div class="modal-desc">${n.desc}</div>
@@ -602,12 +602,10 @@ function openInvModal(invId, nftId) {
     <div class="modal-center"><span class="rarity-tag tag-${n.rarity}">${n.rarity}</span></div>
     <div class="modal-desc">${n.desc}</div>
     <div class="stat-row">
-      <div class="stat-box"><div class="stat-val">${n.sell} ⭐</div><div class="stat-lbl">Stars вывод</div></div>
       <div class="stat-box"><div class="stat-val">${n.price.toLocaleString()}</div><div class="stat-lbl">TC цена</div></div>
     </div>
     <button class="btn-primary" onclick="closeModal();showScreen('list')">Выставить на продажу</button>
     <button class="btn-primary" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)" onclick="goUpgrade(${invId})">Апгрейд</button>
-    <button class="btn-danger" onclick="requestWithdraw(${invId},${nftId})">Вывести ${n.sell} Stars</button>
     <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
   `);
 }
@@ -1656,11 +1654,12 @@ const CASES = {
       { nft_id: 20, chance: 8,    label: 'Love Candle',     rarity: 'Rare',      price: 4200   },
       { nft_id: 35, chance: 6,    label: 'Spiced Wine',     rarity: 'Rare',      price: 2200   },
       // Legendary
-      { nft_id: 57, chance: 1.0,  label: 'Blue Flowers',   rarity: 'Legendary', price: 75000  },
-      { nft_id: 9,  chance: 0.5,  label: 'Eternal Rose',   rarity: 'Legendary', price: 55000  },
-      { nft_id: 52, chance: 0.1,  label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000 },
+      { nft_id: 9,  chance: 1.5,  label: 'Eternal Rose',   rarity: 'Legendary', price: 55000  },
+      { nft_id: 57, chance: 0.8,  label: 'Blue Flowers',   rarity: 'Legendary', price: 75000  },
+      { nft_id: 52, chance: 0.15, label: 'TIDE GOD GIFT',  rarity: 'Legendary', price: 120000 },
       // Ультра-редкий
       { nft_id: 56, chance: 0.05, label: 'Plush Ghost',    rarity: 'Legendary', price: 2000000},
+      { nft_id: 83, chance: 0.05, label: 'Plush Jason',    rarity: 'Legendary', price: 2800000},
     ]
   }
 };
