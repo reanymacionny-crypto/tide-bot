@@ -870,36 +870,51 @@ function calcUpgradeTarget() {
   if (!fromNft) return { targetId: null, targetNft: null, chance: 0 };
   const bet = state.upgradeBet || 0;
 
-  // ножитель и базовый шанс
-  let mult, baseChance;
-  if      (bet >= fromNft.price * 4) { mult = 5;    baseChance = 10; }
-  else if (bet >= fromNft.price * 3) { mult = 4;    baseChance = 20; }
-  else if (bet >= fromNft.price * 2) { mult = 3;    baseChance = 35; }
-  else if (bet >= fromNft.price)     { mult = 2;    baseChance = 50; }
-  else                               { mult = 1.15; baseChance = 75; }
+  // аждый множитель ищет NFT в своём ценовом диапазоне
+  // ез: min > fromNft.price (следующий дороже)
+  // X2:  min > fromNft.price * 1.5 (в 1.5-2.5x)
+  // X3:  min > fromNft.price * 2.5 (в 2.5-3.5x)
+  // X4:  min > fromNft.price * 3.5 (в 3.5-4.5x)
+  // X5:  min > fromNft.price * 4.5 (больше 4.5x)
+  let minMult, maxMult, baseChance;
+  if      (bet >= fromNft.price * 4) { minMult = 4.5; maxMult = Infinity; baseChance = 10; }
+  else if (bet >= fromNft.price * 3) { minMult = 3.5; maxMult = 4.5;     baseChance = 20; }
+  else if (bet >= fromNft.price * 2) { minMult = 2.5; maxMult = 3.5;     baseChance = 35; }
+  else if (bet >= fromNft.price)     { minMult = 1.5; maxMult = 2.5;     baseChance = 50; }
+  else                               { minMult = 1.0; maxMult = 1.5;     baseChance = 75; }
 
-  const targetPrice = fromNft.price * mult;
+  const minPrice = fromNft.price * minMult;
+  const maxPrice = fromNft.price * maxMult;
 
-  // аходим ближайший NFT дороже исходного
+  // щем NFT в нужном диапазоне, ближайший к середине диапазона
+  const midPrice = maxMult === Infinity ? minPrice * 1.5 : (minPrice + maxPrice) / 2;
   let bestId = null, bestNft = null, bestDiff = Infinity;
   Object.entries(NFTS).forEach(([id, n]) => {
     if (parseInt(id) === state.upgradeFromId) return;
     if (n.price <= fromNft.price) return;
-    const diff = Math.abs(n.price - targetPrice);
+    if (n.price < minPrice) return; // ниже диапазона — пропускаем
+    if (maxMult !== Infinity && n.price > maxPrice) return; // выше диапазона — пропускаем
+    const diff = Math.abs(n.price - midPrice);
     if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
   });
 
-  // Шанс уменьшается пропорционально отклонению от целевой цены
-  // ример: цель 345, нашли 370 → отклонение (370-345)/345 = 7.2% → шанс 75*(1-0.072) = 69.6%
-  let chance = baseChance;
-  if (bestNft) {
-    const overPrice = (bestNft.price - targetPrice) / targetPrice;
-    if (overPrice > 0) {
-      chance = Math.round(baseChance * (1 - overPrice));
-      chance = Math.max(chance, 3);
-    }
+  // сли в диапазоне ничего нет — берём ближайший дороже minPrice
+  if (!bestNft) {
+    Object.entries(NFTS).forEach(([id, n]) => {
+      if (parseInt(id) === state.upgradeFromId) return;
+      if (n.price < minPrice) return;
+      const diff = n.price - minPrice;
+      if (diff < bestDiff) { bestDiff = diff; bestId = parseInt(id); bestNft = n; }
+    });
   }
-  console.log('[UPGRADE] from:', fromNft.name, fromNft.price, 'TC | mult:', mult, '| target:', targetPrice, '| found:', bestNft?.name, bestNft?.price, '| chance:', chance+'%');
+
+  // Шанс: если нашли не в диапазоне — уменьшаем пропорционально
+  let chance = baseChance;
+  if (bestNft && bestNft.price > maxPrice && maxMult !== Infinity) {
+    const over = (bestNft.price - maxPrice) / maxPrice;
+    chance = Math.max(Math.round(baseChance * (1 - over * 0.5)), 3);
+  }
+  console.log(`[UPG] from:${fromNft.price} bet:${bet} range:${minPrice.toFixed(0)}-${maxMult===Infinity?"∞":maxPrice.toFixed(0)} found:${bestNft?.name} ${bestNft?.price} chance:${chance}%`);
   return { targetId: bestId, targetNft: bestNft, chance };
 }
 
@@ -1873,8 +1888,10 @@ function playCaseAnimation(c, wonItem) {
   // Позиционируем рулетку так чтобы WIN_POS оказался по центру
   const reelWrapW = document.querySelector('.case-reel-wrap').offsetWidth || 320;
   const centerOffset = reelWrapW / 2 - ITEM_W / 2;
-  const jitter = (Math.random() - 0.5) * 50; // случайный сдвиг ±25px внутри предмета
-  const targetX = -(WIN_POS * ITEM_W - centerOffset) + jitter;
+  // ерём реальную ширину элемента и центрируем WIN_POS точно
+  const firstItem = reel.querySelector('.case-reel-item');
+  const realItemW = firstItem ? firstItem.offsetWidth : ITEM_W;
+  const targetX = -(WIN_POS * realItemW - (reelWrapW / 2 - realItemW / 2));
   // Анимация
   reel.style.transition = 'none';
   reel.style.transform  = 'translateX(0)';
