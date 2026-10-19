@@ -859,11 +859,7 @@ async function depositStars(stars) {
 // Слайдер от 0 до баланса. Ставка списывается при победе (или проигрыше — на выбор).
 
 function calcUpgradeTarget() {
-  const fromIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0) ? state.upgradeFromIds : (state.upgradeFromId ? [state.upgradeFromId] : []);
-  if (!fromIds.length) return { targetId: null, targetNft: null, chance: 0 };
-  const fromNfts = fromIds.map(id => { const inv = state.inventory.find(i => i.inv_id === id); return inv ? NFTS[inv.nft_id] : null; }).filter(Boolean);
-  if (!fromNfts.length) return { targetId: null, targetNft: null, chance: 0 };
-  const fromNft = { price: fromNfts.reduce((s, n) => s + n.price, 0), name: fromNfts.map(n => n.name).join(" + ") };
+  const fromNft = NFTS[state.upgradeFromId];
   const bet = state.upgradeBet || 0;
 
   // Шансы СЫ — не зависят от того какой NFT найден
@@ -891,10 +887,7 @@ function calcUpgradeTarget() {
 function renderUpgrade() {
   const el  = document.getElementById('screen-upgrade');
   const inv = state.inventory;
-  // ля мульти — суммируем цены
-  const _fromIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0) ? state.upgradeFromIds : (state.upgradeFromId ? [state.upgradeFromId] : []);
-  const _fromNfts = _fromIds.map(id => { const invItem = state.inventory.find(i => i.inv_id === id); return invItem ? NFTS[invItem.nft_id] : null; }).filter(Boolean);
-  const fromNft = _fromNfts.length > 0 ? { price: _fromNfts.reduce((s,n)=>s+n.price,0), name: _fromNfts.map(n=>n.name).join(" + "), rarity: _fromNfts[0].rarity } : NFTS[state.upgradeFromId];
+  const fromNft = NFTS[state.upgradeFromId];
   const bet = state.upgradeBet || 0;
   const { targetId, targetNft, chance } = calcUpgradeTarget();
   state.upgradeTo     = targetId;
@@ -1884,7 +1877,7 @@ function playCaseAnimation(c, wonItems) {
     }, 80 + idx * 150);
   }));
 
-  Promise.all(animPromises).then(() => {
+  Promise.all(animPromises).catch(() => {}).then(() => {
     const rc = (r) => ({Common:'#22c55e',Rare:'#3b82f6',Legendary:'#f59e0b'})[r]||'#fff';
     result.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px">' +
       wonItems.map(item => {
