@@ -1,4 +1,4 @@
-const tg = window.Telegram?.WebApp;
+﻿const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
 const API = '';
@@ -15,7 +15,6 @@ let state = {
   spinning: false,
   upgradeFrom: null,
   upgradeFromId: null,
-  upgradeFromIds: [],
   upgradeTo: null,
   upgradeChance: 50,
   upgradeCost: 0,
@@ -916,9 +915,9 @@ function renderUpgrade() {
           : inv.map(item => {
               const n = NFTS[item.nft_id]; if (!n) return '';
               const isPending = state.pendingWithdraws.includes(item.inv_id);
-              const sel = state.upgradeFromIds && state.upgradeFromIds.includes(item.inv_id);
+              const sel = state.upgradeFrom === item.inv_id;
               return `<div class="upg-my-card ${sel?'selected':''} ${isPending?'upg-locked':''}"
-                onclick="${isPending?`toast('NFT на выводе','error')`:`toggleUpgFrom(${item.inv_id},${item.nft_id})`}">
+                onclick="${isPending?`toast('NFT на выводе','error')`:`selectUpgFrom(${item.inv_id},${item.nft_id})`}">
                 ${nftImgHtml(n)}
                 <div class="upg-my-name">${n.name}</div>
                 <div class="upg-my-price">${isPending ? '⏳ Вывод' : n.price.toLocaleString()+' TC'}</div>
@@ -1213,30 +1212,18 @@ async function spinWheel() {
   const btn=document.getElementById('upg-spin-btn'), res=document.getElementById('wheel-result');
   if(btn) btn.disabled=true;
   if(res){res.textContent='';res.className='wheel-result';}
-  const upgradeIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0)
-    ? state.upgradeFromIds : [state.upgradeFrom];
-
   let won = false;
   try {
-    // даляем все выбранные NFT с сервера и бросаем кубик
-    let lastR = null;
-    for (const id of upgradeIds) {
-      lastR = await apiPost('/upgrade', {inv_id: id, to_id: state.upgradeTo, chance: state.upgradeChance, cost: 0});
-    }
-    // оследний запрос определяет результат и списывает ставку
-    const r = await apiPost('/upgrade', {inv_id: upgradeIds[upgradeIds.length-1], to_id: state.upgradeTo, chance: state.upgradeChance, cost: state.upgradeBet||0}).catch(()=>lastR);
-    won = r && r.ok === true;
-    if (r && r.error && r.error !== 'NFT не найден') toast(r.error, 'error');
-    if (r && r.balance !== undefined) state.balance = r.balance;
-    if (r && r.inventory) state.inventory = r.inventory;
+    const r = await apiPost('/upgrade', {inv_id:state.upgradeFrom, to_id:state.upgradeTo, chance:state.upgradeChance, cost:state.upgradeBet||0});
+    won = r.ok === true;
+    if (r.error) toast(r.error, 'error');
+    if (r.balance !== undefined) state.balance = r.balance;
+    if (r.inventory) state.inventory = r.inventory;
     saveState(); renderHome(); renderInventory();
   } catch(e) {
-    console.log('[UPG catch]', e);
     won = Math.random() * 100 < (state.upgradeChance || 50);
     if (state.upgradeBet > 0) state.balance -= state.upgradeBet;
-    for (const id of upgradeIds) {
-      state.inventory = state.inventory.filter(i => i.inv_id !== id);
-    }
+    state.inventory = state.inventory.filter(i => i.inv_id !== state.upgradeFrom);
     if (won) state.inventory.push({inv_id: Date.now(), nft_id: state.upgradeTo});
     saveState(); renderHome(); renderInventory();
   }
@@ -1274,7 +1261,7 @@ async function spinWheel() {
       res.className=`wheel-result ${won?'win':'lose'}`;
       toast(won?'Апгрейд успешен!':'Не повезло', won?'success':'error');
     }
-    state.upgradeFrom=null;state.upgradeFromId=null;state.upgradeTo=null;state.upgradeFromIds=[];
+    state.upgradeFrom=null;state.upgradeFromId=null;state.upgradeTo=null;
     renderHome();renderInventory();
     loadUser(); // обновить инвентарь с сервера
     setTimeout(()=>renderUpgrade(),2200);
@@ -1727,25 +1714,11 @@ function renderCases() {
       <div class="case-detail-title" style="color:${c.color}">${c.name}</div>
       <div class="case-detail-price">${c.price.toLocaleString()} TC</div>
 
-      <div style="padding:0 16px;margin-bottom:16px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-          <button class="btn-primary" onclick="startCaseOpen('${c.id}',1)"
-            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
-            x1 — ${c.price.toLocaleString()} TC
-          </button>
-          <button class="btn-primary" onclick="startCaseOpen('${c.id}',2)"
-            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
-            x2 — ${(c.price*2).toLocaleString()} TC
-          </button>
-          <button class="btn-primary" onclick="startCaseOpen('${c.id}',3)"
-            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
-            x3 — ${(c.price*3).toLocaleString()} TC
-          </button>
-          <button class="btn-primary" onclick="startCaseOpen('${c.id}',4)"
-            style="background:linear-gradient(135deg,${c.color}cc,${c.color}88);color:#fff;font-size:13px;padding:10px 8px">
-            x4 — ${(c.price*4).toLocaleString()} TC
-          </button>
-        </div>
+            <div style="padding:0 16px;margin-bottom:16px">
+        <button class="btn-primary" onclick="startCaseOpen('${c.id}',1)"
+          style="background:linear-gradient(135deg,${c.color}dd,${c.color}88);color:#000;font-size:15px">
+          ткрыть за ${c.price.toLocaleString()} TC
+        </button>
       </div>
 
       <div style="padding:0 16px 8px">
@@ -1819,45 +1792,38 @@ function openCaseModal(caseId) {
 // ткрыть кейс count раз (1-4)
 
 async function startCaseOpen(caseId, count) {
-  count = count || 1;
   const c = CASES[caseId];
   if (caseOpening) return;
-  const totalCost = c.price * count;
-  if (state.balance < totalCost) { toast('едостаточно T Coins', 'error'); return; }
+  if (state.balance < c.price) { toast('едостаточно T Coins', 'error'); return; }
+
   closeModal();
   caseOpening = true;
-  state.balance -= totalCost;
+  state.balance -= c.price;
   renderHome();
 
-  const promises = [];
-  for (let i = 0; i < count; i++) {
-    promises.push(
-      apiPost('/open_case', { case_id: caseId }).then(res => {
-        if (res.ok) {
-          if (res.balance !== undefined) state.balance = res.balance;
-          if (res.inventory) state.inventory = res.inventory;
-          return c.items.find(x => x.nft_id === res.nft_id) ||
-            (NFTS[res.nft_id] ? { nft_id: res.nft_id, label: NFTS[res.nft_id].name, rarity: NFTS[res.nft_id].rarity, price: NFTS[res.nft_id].price } : null);
-        }
-        return null;
-      }).catch(() => null)
-    );
+  let wonItem = null;
+  try {
+    const res = await apiPost('/open_case', { case_id: caseId });
+    if (res.ok) {
+      wonItem = c.items.find(i => i.nft_id === res.nft_id) ||
+        (NFTS[res.nft_id] ? { nft_id: res.nft_id, label: NFTS[res.nft_id].name, rarity: NFTS[res.nft_id].rarity, price: NFTS[res.nft_id].price } : null);
+      state.balance   = res.balance;
+      state.inventory = res.inventory;
+      saveState(); renderHome(); renderInventory();
+    }
+  } catch {}
+
+  if (!wonItem) {
+    const total = c.items.reduce((s, i) => s + i.chance, 0);
+    const rand = Math.random() * total;
+    let cum = 0;
+    for (const item of c.items) { cum += item.chance; if (rand <= cum) { wonItem = item; break; } }
+    if (!wonItem) wonItem = c.items[c.items.length - 1];
+    state.inventory.push({ inv_id: Date.now(), nft_id: wonItem.nft_id });
+    saveState(); renderHome(); renderInventory();
   }
 
-  const results = await Promise.all(promises);
-  const wonItems = results.map((item, idx) => {
-    if (!item) {
-      const total = c.items.reduce((s, x) => s + x.chance, 0);
-      let rand = Math.random() * total, cum = 0, picked = c.items[c.items.length-1];
-      for (const it of c.items) { cum += it.chance; if (rand <= cum) { picked = it; break; } }
-      state.inventory.push({ inv_id: Date.now() + idx, nft_id: picked.nft_id });
-      return picked;
-    }
-    return item;
-  });
-
-  saveState(); renderHome(); renderInventory();
-  playCaseAnimation(c, wonItems);
+  playCaseAnimation(c, [wonItem]);
 }
 
 function playCaseAnimation(c, wonItems) {
