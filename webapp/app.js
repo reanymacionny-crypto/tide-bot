@@ -1213,19 +1213,30 @@ async function spinWheel() {
   const btn=document.getElementById('upg-spin-btn'), res=document.getElementById('wheel-result');
   if(btn) btn.disabled=true;
   if(res){res.textContent='';res.className='wheel-result';}
-  let won=false;
+  const upgradeIds = (state.upgradeFromIds && state.upgradeFromIds.length > 0)
+    ? state.upgradeFromIds : [state.upgradeFrom];
+
+  let won = false;
   try {
-    const r = await apiPost('/upgrade', {inv_id:state.upgradeFrom, to_id:state.upgradeTo, chance:state.upgradeChance, cost:state.upgradeBet||0});
-    won = r.ok === true;
-    if (r.error) toast(r.error, 'error');
-    if (r.balance !== undefined) state.balance = r.balance;
-    if (r.inventory) state.inventory = r.inventory;
+    // даляем все выбранные NFT с сервера и бросаем кубик
+    let lastR = null;
+    for (const id of upgradeIds) {
+      lastR = await apiPost('/upgrade', {inv_id: id, to_id: state.upgradeTo, chance: state.upgradeChance, cost: 0});
+    }
+    // оследний запрос определяет результат и списывает ставку
+    const r = await apiPost('/upgrade', {inv_id: upgradeIds[upgradeIds.length-1], to_id: state.upgradeTo, chance: state.upgradeChance, cost: state.upgradeBet||0}).catch(()=>lastR);
+    won = r && r.ok === true;
+    if (r && r.error && r.error !== 'NFT не найден') toast(r.error, 'error');
+    if (r && r.balance !== undefined) state.balance = r.balance;
+    if (r && r.inventory) state.inventory = r.inventory;
     saveState(); renderHome(); renderInventory();
   } catch(e) {
     console.log('[UPG catch]', e);
     won = Math.random() * 100 < (state.upgradeChance || 50);
     if (state.upgradeBet > 0) state.balance -= state.upgradeBet;
-    state.inventory = state.inventory.filter(i => i.inv_id !== state.upgradeFrom);
+    for (const id of upgradeIds) {
+      state.inventory = state.inventory.filter(i => i.inv_id !== id);
+    }
     if (won) state.inventory.push({inv_id: Date.now(), nft_id: state.upgradeTo});
     saveState(); renderHome(); renderInventory();
   }
@@ -1263,7 +1274,7 @@ async function spinWheel() {
       res.className=`wheel-result ${won?'win':'lose'}`;
       toast(won?'Апгрейд успешен!':'Не повезло', won?'success':'error');
     }
-    state.upgradeFrom=null;state.upgradeFromId=null;state.upgradeTo=null;
+    state.upgradeFrom=null;state.upgradeFromId=null;state.upgradeTo=null;state.upgradeFromIds=[];
     renderHome();renderInventory();
     loadUser(); // обновить инвентарь с сервера
     setTimeout(()=>renderUpgrade(),2200);
@@ -1927,98 +1938,6 @@ function closeCaseOverlay() {
     const reel = document.getElementById('case-reel-' + i);
     if (reel) { reel.style.transition = 'none'; reel.style.transform = 'translateX(0)'; }
   }
-}
-function playCaseAnimation(c, wonItem) {
-  const overlay = document.getElementById('case-open-overlay');
-  const reel    = document.getElementById('case-reel-0'); // legacy fallback
-  const result  = document.getElementById('case-open-result');
-  const title   = document.getElementById('case-open-title');
-
-  overlay.style.display = 'flex';
-  result.innerHTML = '';
-  result.className = 'case-open-result';
-
-  // Заголовок с названием и цветом конкретного кейса
-  if (title) {
-    title.textContent = c.name.toUpperCase();
-    title.style.color = c.color || '#4ade80';
-    title.style.textShadow = `0 0 20px ${c.color || '#4ade80'}66`;
-  }
-
-  // Цвет указателя под кейс
-  const pointer = document.querySelector('.case-reel-pointer');
-  if (pointer) {
-    pointer.style.background = c.color || '#4ade80';
-    pointer.style.boxShadow  = `0 0 12px ${c.color || '#4ade80'}cc`;
-  }
-
-  // Генерируем ленту — 40 предметов + выигрыш в центре (позиция 32)
-  const WIN_POS = 32;
-  const items = [];
-  for (let i = 0; i < 40; i++) {
-    if (i === WIN_POS) {
-      items.push(wonItem);
-    } else {
-      // Случайный предмет с учётом шансов
-      const total = c.items.reduce((s, x) => s + x.chance, 0);
-      let rand = Math.random() * total;
-      let picked = c.items[0];
-      for (const it of c.items) { rand -= it.chance; if (rand <= 0) { picked = it; break; } }
-      items.push(picked);
-    }
-  }
-
-  const ITEM_W = 80; // px ширина одного элемента
-  reel.innerHTML = items.map(item => {
-    const n = NFTS[item.nft_id];
-    const rarityColor = { Common: '#22c55e', Rare: '#3b82f6', Legendary: '#f59e0b' }[item.rarity] || '#fff';
-    return `
-      <div class="case-reel-item" style="border-color:${rarityColor}20">
-        <img src="${n ? nftPreviewSrc(n) : ''}" style="width:60px;height:60px;object-fit:cover;border-radius:10px">
-        <div style="font-size:9px;font-weight:700;color:${rarityColor};margin-top:4px;text-align:center;white-space:nowrap;overflow:hidden;max-width:70px;text-overflow:ellipsis">${item.label}</div>
-      </div>`;
-  }).join('');
-
-  // Позиционируем рулетку так чтобы WIN_POS оказался по центру
-  const reelWrapW = document.querySelector('.case-reel-wrap').offsetWidth || 320;
-  const centerOffset = reelWrapW / 2 - ITEM_W / 2;
-  // ерём реальную ширину элемента и центрируем WIN_POS точно
-  const firstItem = reel.querySelector('.case-reel-item');
-  const realItemW = firstItem ? firstItem.offsetWidth : ITEM_W;
-  const targetX = -(WIN_POS * realItemW - (reelWrapW / 2 - realItemW / 2));
-  // Анимация
-  reel.style.transition = 'none';
-  reel.style.transform  = 'translateX(0)';
-
-  setTimeout(() => {
-    reel.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1.0)';
-    reel.style.transform  = `translateX(${targetX}px)`;
-  }, 80);
-
-  // Через 4.2с показываем результат
-  setTimeout(() => {
-    const n = NFTS[wonItem.nft_id];
-    const rarityColor = { Common: '#22c55e', Rare: '#3b82f6', Legendary: '#f59e0b' }[wonItem.rarity] || '#fff';
-    result.innerHTML = `
-      <div class="case-result-card" style="border-color:${rarityColor}">
-        <img src="${n ? n.img : ''}" style="width:80px;height:80px;object-fit:cover;border-radius:14px;margin-bottom:10px">
-        <div style="font-size:18px;font-weight:900;color:var(--text)">${wonItem.label}</div>
-        <div style="font-size:12px;font-weight:700;color:${rarityColor};margin:4px 0">${wonItem.rarity}</div>
-        <div style="font-size:13px;color:var(--gold)">${wonItem.price.toLocaleString()} TC</div>
-      </div>
-      <button class="btn-primary" style="margin-top:14px;width:100%" onclick="closeCaseOverlay()">Забрать</button>
-    `;
-    result.className = 'case-open-result visible';
-    toast(`Выпало: ${wonItem.label}!`, 'success');
-    caseOpening = false;
-    renderHome(); renderInventory();
-  }, 4300);
-}
-
-function closeCaseOverlay() {
-  document.getElementById('case-open-overlay').style.display = 'none';
-  document.getElementById('case-reel').style.transition = 'none';
-  document.getElementById('case-reel').style.transform  = 'translateX(0)';
 }
 
 // ── INIT ──────────────────────────────────────────────
