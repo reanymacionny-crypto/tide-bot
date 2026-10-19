@@ -1,4 +1,4 @@
-﻿const tg = window.Telegram?.WebApp;
+const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
 const API = '';
@@ -1009,6 +1009,7 @@ function selectUpgFrom(invId, nftId) {
   state.upgradeChance = 50;
   state.upgradeBet    = 0;
   renderUpgrade();
+}
 
 // ереключить выбор NFT для апгрейда (мульти)
 function toggleUpgFrom(invId, nftId) {
@@ -2028,4 +2029,3 @@ document.addEventListener('DOMContentLoaded', () => {
   renderUpgrade();
   loadUser();
 });
-}
